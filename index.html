@@ -258,6 +258,23 @@
     .insight p { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.55; }
     .insight-icon { flex: 0 0 auto; width: 25px; height: 25px; display: grid; place-items: center; border-radius: 8px; background: var(--cream); font-size: 11px; }
 
+    .save-record { margin: 0 16px 16px; border: 1px solid #cbdcd5; border-radius: 16px; padding: 16px; background: linear-gradient(135deg, #f1f8f5, #fffefa); }
+    .save-record-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .save-record-copy strong { display: block; margin-bottom: 5px; color: var(--brand-strong); font-size: 14px; }
+    .save-record-copy p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.65; }
+    .save-record-form { display: none; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--line-dark); }
+    .save-record.open .save-record-form { display: block; }
+    .save-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .save-field label { display: block; margin-bottom: 6px; color: var(--ink); font-size: 11px; font-weight: 700; }
+    .save-field input { width: 100%; min-height: 42px; border: 1px solid var(--line-dark); border-radius: 11px; padding: 0 12px; color: var(--ink); background: white; }
+    .save-consent { display: flex; align-items: flex-start; gap: 9px; margin-top: 13px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+    .save-consent input { flex: 0 0 auto; width: 17px; height: 17px; margin-top: 1px; accent-color: var(--brand); }
+    .privacy-note { margin-top: 10px; border-radius: 11px; padding: 10px 12px; color: #596864; background: rgba(255,255,255,.72); font-size: 9px; line-height: 1.65; }
+    .save-record-actions { display: flex; align-items: center; gap: 10px; margin-top: 13px; }
+    .save-status { color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .save-status.success { color: var(--brand); font-weight: 700; }
+    .save-status.error { color: var(--red); }
+
     .content-card { padding: 0; overflow: hidden; }
     .content-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
     .tabs { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: #edf1ed; }
@@ -395,6 +412,7 @@
       .input-panel { position: relative; top: auto; order: 1; }
       .results { order: 2; }
       .insight-strip { grid-template-columns: 1fr; }
+      .save-fields { grid-template-columns: 1fr; }
       .mobile-actions {
         position: fixed; z-index: 18; left: 12px; right: 12px; bottom: max(10px, env(safe-area-inset-bottom));
         display: grid; grid-template-columns: 1fr 1.25fr; gap: 8px; border: 1px solid rgba(202,212,204,.9);
@@ -461,6 +479,11 @@
       .metric:nth-child(n+3) { border-bottom: 0; }
       .metric-value { font-size: 22px; }
       .metric-note { display: none; }
+      .save-record { margin: 0 12px 12px; padding: 14px; }
+      .save-record-head { display: block; }
+      .save-record-head .btn { width: 100%; margin-top: 12px; }
+      .save-record-actions { align-items: stretch; flex-direction: column; }
+      .save-record-actions .btn { width: 100%; }
       .toolbar-actions .btn:not(.primary) { display: none; }
       .content-toolbar { align-items: flex-start; flex-direction: column; }
       .scenario-wrap { display: none; }
@@ -788,6 +811,27 @@
             <div class="insight"><span class="insight-icon">◎</span><div><strong id="fullExemptionTitle">完全免征需要测算</strong><p id="fullExemptionCopy">招聘人数变化会同时影响企业总人数，系统已一并计算。</p></div></div>
             <div class="insight"><span class="insight-icon">!</span><div><strong id="riskTitle">关键条件待确认</strong><p id="riskCopy">优惠能否实现取决于真实用工、年审材料和当地执行口径。</p></div></div>
           </div>
+          <section class="save-record" id="saveRecordBox" aria-labelledby="saveRecordTitle">
+            <div class="save-record-head">
+              <div class="save-record-copy">
+                <strong id="saveRecordTitle">需要以后继续看？保存本次测算</strong>
+                <p id="saveReadyHint">保存完全自愿，不保存也能正常测算和导出报告。</p>
+              </div>
+              <button class="btn primary" id="saveCalculationBtn" type="button" aria-expanded="false">保存测算记录</button>
+            </div>
+            <div class="save-record-form" id="saveRecordForm">
+              <div class="save-fields">
+                <div class="save-field"><label for="saveCompanyName">企业名称（选填）</label><input id="saveCompanyName" maxlength="80" autocomplete="organization" placeholder="例如：广东某某制造有限公司"></div>
+                <div class="save-field"><label for="saveContact">联系人 / 手机 / 微信（选填）</label><input id="saveContact" maxlength="80" autocomplete="tel" placeholder="仅用于后续沟通"></div>
+              </div>
+              <label class="save-consent"><input id="saveConsent" type="checkbox"><span>我已阅读并同意保存本次测算数据，用于留存方案及后续沟通。我知道可以不保存，且测算结果仅供参考。</span></label>
+              <div class="privacy-note">保存内容：企业所在地、人数、工资总额、成本参数、测算结果，以及您自愿填写的企业名称和联系方式。不收集残疾员工姓名、身份证号、残疾证号，也不会在您点击保存前上传测算数据。普通访客不能读取其他企业的记录。</div>
+              <div class="save-record-actions">
+                <button class="btn primary" id="confirmSaveBtn" type="button">确认并保存</button>
+                <span class="save-status" id="saveStatus" role="status">数据将保存到腾讯云上海地域的私有数据库。</span>
+              </div>
+            </div>
+          </section>
         </article>
 
         <article class="panel content-card">
@@ -890,6 +934,7 @@
   </div>
   <div class="toast" id="toast">已复制</div>
 
+  <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
   <script>
     const $ = id => document.getElementById(id);
     const CITY_POLICY = {
@@ -911,8 +956,13 @@
       chaozhou:'潮州', jieyang:'揭阳', yunfu:'云浮'
     };
     const MIN_WAGE_SOURCE = 'https://www.gdfao.gd.gov.cn/bsfw/wsgl/fwjg/content/post_1288091.html';
+    const CLOUDBASE_ENV_ID = 'canbaojin-d7gfb2yfg490fc759';
+    const CLOUDBASE_REGION = 'ap-shanghai';
+    const CLOUDBASE_SITE_URL = 'https://canbaojin-d7gfb2yfg490fc759-1427274058.tcloudbaseapp.com/';
     let locationSource = '手动选择';
     let policyMeta = {};
+    let cloudbaseApp = null;
+    let saveInProgress = false;
 
     const inputIds = [
       'clientName','providerName','city','district','targetYear','staffCount','ratio','payrollTotalWan','avgWage','capWage','existing',
@@ -1296,6 +1346,110 @@
       };
     }
 
+    function setSaveStatus(message, type = '') {
+      const status = $('saveStatus');
+      status.textContent = message;
+      status.className = `save-status ${type}`.trim();
+    }
+
+    function cleanOptionalText(id) {
+      return $(id).value.trim().replace(/[<>]/g, '').slice(0, 80);
+    }
+
+    async function getCloudbaseDatabase() {
+      if (!window.cloudbase) throw new Error('云端组件未加载，请检查网络后重试');
+      if (!cloudbaseApp) cloudbaseApp = window.cloudbase.init({ env: CLOUDBASE_ENV_ID, region: CLOUDBASE_REGION });
+      const auth = cloudbaseApp.auth();
+      const loginState = typeof auth.getLoginState === 'function' ? await auth.getLoginState() : null;
+      if (!loginState) await auth.signInAnonymously();
+      return cloudbaseApp.database();
+    }
+
+    function buildCalculationRecord(data) {
+      const r = data.collaboration;
+      return {
+        schema_version: 1,
+        created_at_iso: new Date().toISOString(),
+        source: 'cloudbase_site',
+        page_path: `${location.origin}${location.pathname}`,
+        consent_version: '2026-08-15-v1',
+        company_name: cleanOptionalText('saveCompanyName'),
+        contact: cleanOptionalText('saveContact'),
+        inputs: {
+          city: data.city,
+          district: data.district || '',
+          location_source: data.locationSource,
+          target_year: data.targetYear,
+          staff_count: data.staff,
+          payroll_total: data.payrollTotal,
+          average_wage: data.averageWage,
+          existing_disabled_average: data.existing,
+          required_ratio: data.requiredRatio,
+          wage_cap: data.wageCap,
+          start_month: data.startMonth,
+          employed_months: data.months,
+          count_factor: data.factor,
+          monthly_wage: data.monthlyWage,
+          employer_social_cost: data.socialCost,
+          other_monthly_cost: data.otherCost,
+          one_off_cost: data.oneOffCost,
+          success_fee_rate: data.successRate,
+          fixed_service_fee: data.fixedFee,
+          include_income_tax: data.includeIncomeTax,
+          policy_verified_by_user: data.policyVerified
+        },
+        results: {
+          baseline_due: data.baselineDue,
+          full_exemption_count: data.fullExemptionCount,
+          collaboration_hire_count: r.n,
+          after_due: r.due,
+          fund_saving: r.fundSaving,
+          labor_cost: r.laborCost,
+          gross_after_labor: r.fundNetBeforeFee,
+          income_tax_saving: r.incomeTaxSaving,
+          service_fee: r.serviceFee,
+          client_net: r.clientNet,
+          after_ratio_pct: r.ratioPct
+        },
+        policy_status: data.policyMeta.status || '待核验',
+        reference_only: Boolean(data.policyMeta.referenceOnly),
+        compliance_confirmed_count: data.checks.length - data.compliancePending
+      };
+    }
+
+    async function saveCalculationRecord() {
+      if (saveInProgress) return;
+      const data = window.latestData;
+      if (!data?.hasCorePolicy) {
+        setSaveStatus('请先补齐核心数据并生成完整测算结果。', 'error');
+        return;
+      }
+      if (!$('saveConsent').checked) {
+        setSaveStatus('请先勾选同意保存本次测算数据。', 'error');
+        $('saveConsent').focus();
+        return;
+      }
+      saveInProgress = true;
+      $('confirmSaveBtn').disabled = true;
+      $('confirmSaveBtn').textContent = '正在保存…';
+      setSaveStatus('正在安全保存，请稍候…');
+      try {
+        const db = await getCloudbaseDatabase();
+        const result = await db.collection('calculation_records').add({ data: buildCalculationRecord(data) });
+        const recordId = result?.id || result?._id || '';
+        setSaveStatus(recordId ? `已保存成功 · 记录编号 ${recordId}` : '已保存成功，管理员可在后台查看。', 'success');
+        showToast('测算记录已保存');
+      } catch (error) {
+        console.error('保存测算记录失败', error);
+        const message = String(error?.message || error || '未知错误');
+        setSaveStatus(message.includes('collection') || message.includes('database') ? '数据库尚未完成首次初始化，请联系管理员处理。' : message.includes('domain') || message.includes('域名') ? '当前地址无权保存，请使用腾讯云正式访问地址。' : '保存失败，请检查网络后重试或联系管理员。', 'error');
+      } finally {
+        saveInProgress = false;
+        $('confirmSaveBtn').disabled = false;
+        $('confirmSaveBtn').textContent = '确认并保存';
+      }
+    }
+
     function buildFormulaHtml(data) {
       const r = data.collaboration;
       const ready = data.hasCorePolicy;
@@ -1400,6 +1554,12 @@
       $('fullExemptionCopy').textContent = !data.hasCorePolicy ? '系统会同时展示不招聘要交多少、招聘能省多少、扣除成本后净收益多少。' : data.isSmallEnterprise ? '30人及以下企业的残保金减免与是否新增招聘不是同一件事。' : `按${data.startMonth}月入职、在岗${data.months}个月、认定系数${data.factor}测算；实际以年度联网认证结果为准。`;
       $('riskTitle').textContent = data.compliancePending ? `${data.compliancePending}项关键条件待确认` : '核心用工条件已勾选';
       $('riskCopy').textContent = data.compliancePending ? '未确认条件不会阻止试算，但合作方案只可表述为“满足条件后预计可享受”。' : '仍需核验当地年度政策、证件有效性及主管部门执行口径。';
+      const isCloudbaseSite = location.hostname.endsWith('.tcloudbaseapp.com');
+      $('saveReadyHint').textContent = !isCloudbaseSite
+        ? '当前地址可正常测算；如需云端留存，请前往腾讯云正式版。'
+        : data.hasCorePolicy
+          ? `当前结果已可保存：合作前预计${money(data.baselineDue)}，扣除全部成本后净收益${money(r.clientNet)}。`
+          : '先完成核心数据，生成完整结果后即可选择保存；不保存也能正常测算。';
 
       $('scenarioBody').innerHTML = data.hasCorePolicy ? data.scenarios.map(s => {
         const isRec = s.n === r.n;
@@ -1546,6 +1706,22 @@
       catch { showToast('浏览器未允许复制，请手动选择文本'); }
     });
 
+    $('saveCalculationBtn').addEventListener('click', () => {
+      if (!location.hostname.endsWith('.tcloudbaseapp.com')) {
+        location.href = CLOUDBASE_SITE_URL;
+        return;
+      }
+      const box = $('saveRecordBox');
+      const isOpen = box.classList.toggle('open');
+      $('saveCalculationBtn').setAttribute('aria-expanded', String(isOpen));
+      $('saveCalculationBtn').textContent = isOpen ? '收起保存表单' : '保存测算记录';
+      if (isOpen && !$('saveCompanyName').value.trim()) {
+        const name = $('clientName').value.trim();
+        if (name && name !== '客户企业') $('saveCompanyName').value = name;
+      }
+    });
+    $('confirmSaveBtn').addEventListener('click', saveCalculationRecord);
+
     function printProposal() {
       document.querySelector('[data-tab="proposalPane"]').click();
       setTimeout(() => window.print(), 80);
@@ -1574,6 +1750,10 @@
         if (el.type === 'checkbox') el.checked = initialValues[id]; else el.value = initialValues[id];
       });
       locationSource = '手动选择';
+      $('saveCompanyName').value = '';
+      $('saveContact').value = '';
+      $('saveConsent').checked = false;
+      setSaveStatus('数据将保存到腾讯云上海地域的私有数据库。');
       updateDerivedWage();
       applyCityPolicy(true);
       showToast('已清空，可以重新测算');
@@ -1581,6 +1761,7 @@
 
     updateDerivedWage();
     applyCityPolicy(true);
+    if (!location.hostname.endsWith('.tcloudbaseapp.com')) $('saveCalculationBtn').textContent = '前往腾讯云版保存';
     setTimeout(() => locateByIP(true), 350);
   </script>
 </body>
