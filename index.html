@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>残保金测算与合作方案生成器 · 重新设计版</title>
+  <style>
+    :root {
+      --ink: #172426;
+      --muted: #667477;
+      --brand: #0f5c55;
+      --brand-strong: #0a4540;
+      --brand-soft: #e7f3ef;
+      --lime: #d9ed8b;
+      --cream: #f6f3ea;
+      --paper: #fffefa;
+      --line: #dfe5df;
+      --line-dark: #cad4cc;
+      --orange: #d8682c;
+      --orange-soft: #fff0e4;
+      --red: #b8483f;
+      --red-soft: #fcedea;
+      --blue: #315d87;
+      --blue-soft: #eaf1f8;
+      --shadow: 0 18px 52px rgba(28, 58, 52, .09);
+      --shadow-soft: 0 8px 24px rgba(28, 58, 52, .06);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(circle at 4% 6%, rgba(217, 237, 139, .28), transparent 24rem),
+        linear-gradient(180deg, #f8f6ef 0, #f3f6f2 36rem, #eef3ef 100%);
+      color: var(--ink);
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+      outline: 3px solid rgba(15, 92, 85, .2);
+      outline-offset: 2px;
+    }
+
+    .app-shell { max-width: 1480px; margin: 0 auto; padding: 18px 28px 72px; }
+
+    .topbar {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 760; letter-spacing: -.02em; }
+    .brand-mark {
+      width: 38px; height: 38px; display: grid; place-items: center;
+      border-radius: 13px; background: var(--brand); color: white; box-shadow: var(--shadow-soft);
+    }
+    .brand small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 500; letter-spacing: 0; }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .status-pill, .mini-pill {
+      display: inline-flex; align-items: center; gap: 7px; border-radius: 999px;
+      color: var(--brand-strong); background: var(--brand-soft); font-size: 12px; font-weight: 700;
+      padding: 8px 12px; white-space: nowrap;
+    }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #3b9f70; box-shadow: 0 0 0 4px rgba(59, 159, 112, .12); }
+
+    .btn {
+      border: 1px solid var(--line-dark); border-radius: 12px; min-height: 40px; padding: 0 15px;
+      color: var(--ink); background: rgba(255, 255, 255, .72); font-size: 13px; font-weight: 700;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+    .btn:hover { transform: translateY(-1px); border-color: var(--brand); background: white; }
+    .btn.primary { background: var(--brand); color: white; border-color: var(--brand); }
+    .btn.primary:hover { background: var(--brand-strong); }
+    .btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+    .btn.small { min-height: 34px; padding: 0 12px; font-size: 12px; }
+
+    .hero {
+      position: relative; overflow: hidden; border-radius: var(--radius-xl); padding: 38px 42px 34px;
+      background: var(--brand-strong); color: white; box-shadow: var(--shadow);
+    }
+    .hero::before {
+      content: ""; position: absolute; width: 420px; height: 420px; border: 92px solid rgba(217, 237, 139, .13);
+      border-radius: 50%; right: -170px; top: -220px;
+    }
+    .hero::after {
+      content: ""; position: absolute; width: 160px; height: 160px; border-radius: 50%;
+      background: var(--lime); right: 9%; bottom: -118px; opacity: .92;
+    }
+    .hero-inner { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(260px, .55fr); gap: 42px; align-items: end; }
+    .eyebrow { display: inline-flex; gap: 7px; align-items: center; color: var(--lime); font-size: 12px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+    .hero h1 { max-width: 780px; margin: 12px 0 13px; font-size: clamp(32px, 4vw, 56px); line-height: 1.08; letter-spacing: -.045em; }
+    .hero p { max-width: 700px; margin: 0; color: rgba(255,255,255,.72); font-size: 15px; line-height: 1.75; }
+    .hero-proof { display: grid; gap: 10px; }
+    .proof-item { display: flex; gap: 10px; align-items: center; color: rgba(255,255,255,.82); font-size: 13px; }
+    .proof-icon { flex: 0 0 auto; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.18); border-radius: 9px; background: rgba(255,255,255,.08); }
+
+    .workflow { display: flex; align-items: center; gap: 10px; padding: 22px 4px 20px; overflow-x: auto; }
+    .step { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; font-weight: 650; white-space: nowrap; }
+    .step.active { color: var(--brand); }
+    .step-number { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--line-dark); background: var(--paper); }
+    .step.active .step-number { color: white; border-color: var(--brand); background: var(--brand); }
+    .step-line { width: clamp(18px, 4vw, 64px); height: 1px; background: var(--line-dark); }
+
+    .policy-explainer { margin-bottom: 22px; overflow: hidden; border: 1px solid #cbdcd5; border-radius: 22px; background: rgba(255,254,250,.94); box-shadow: var(--shadow-soft); }
+    .policy-explainer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 22px 24px 18px; }
+    .policy-explainer-kicker { color: var(--brand); font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+    .policy-explainer h2 { margin: 7px 0 6px; font-size: 22px; letter-spacing: -.025em; }
+    .policy-explainer-head p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+    .policy-explainer-head a { color: var(--brand); font-weight: 750; text-decoration: none; }
+    .master-formula { margin: 0 24px; border-radius: 16px; padding: 17px 20px; color: white; background: var(--brand-strong); font-size: clamp(17px, 2vw, 25px); font-weight: 800; line-height: 1.5; letter-spacing: -.02em; text-align: center; }
+    .master-formula .formula-muted { color: rgba(255,255,255,.58); font-weight: 600; }
+    .master-formula .formula-accent { color: var(--lime); }
+    .formula-terms { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 14px 24px 20px; }
+    .formula-term { border: 1px solid var(--line); border-radius: 13px; padding: 12px; background: #fafbf7; }
+    .formula-term b { display: block; margin-bottom: 5px; color: var(--brand-strong); font-size: 12px; }
+    .formula-term span { display: block; color: var(--muted); font-size: 10px; line-height: 1.55; }
+    .live-formula { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--line); padding: 14px 24px; background: #f0f6f2; }
+    .live-formula span { color: var(--muted); font-size: 10px; }
+    .live-formula strong { display: block; margin-top: 4px; color: var(--brand-strong); font-size: 14px; line-height: 1.45; }
+
+    .workspace { display: grid; grid-template-columns: minmax(320px, 410px) minmax(0, 1fr); gap: 22px; align-items: start; }
+    .panel {
+      background: rgba(255, 254, 250, .9); border: 1px solid rgba(202, 212, 204, .9);
+      border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); backdrop-filter: blur(10px);
+    }
+    .input-panel { position: sticky; top: 16px; overflow: hidden; }
+    .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 22px 22px 18px; border-bottom: 1px solid var(--line); }
+    .panel-head h2 { margin: 0 0 5px; font-size: 18px; letter-spacing: -.02em; }
+    .panel-head p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .example-badge { flex: 0 0 auto; border-radius: 9px; background: var(--cream); color: #776e55; padding: 6px 9px; font-size: 10px; font-weight: 750; }
+
+    .quick-guide { margin: 16px 22px 0; border: 1px solid #c8ddd5; border-radius: 15px; padding: 14px; background: linear-gradient(135deg, #eaf5f1, #fbfcf7); }
+    .quick-guide strong { display: block; margin-bottom: 5px; color: var(--brand-strong); font-size: 12px; }
+    .quick-guide p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.65; }
+    .quick-guide-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .quick-guide-list span { border-radius: 999px; padding: 5px 8px; color: #48655f; background: rgba(255,255,255,.78); font-size: 9px; font-weight: 700; }
+    .form-progress { margin-top: 10px; }
+    .form-progress-track { height: 6px; overflow: hidden; border-radius: 999px; background: #dce8e3; }
+    .form-progress-bar { height: 100%; width: 0; border-radius: inherit; background: var(--brand); transition: width .25s ease; }
+    .form-progress-copy { display: flex; justify-content: space-between; gap: 10px; margin-top: 6px; color: var(--muted); font-size: 9px; }
+
+    .form-section { padding: 20px 22px; border-bottom: 1px solid var(--line); }
+    .form-section:last-child { border-bottom: 0; }
+    .section-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
+    .section-title h3 { margin: 0; font-size: 13px; letter-spacing: .01em; }
+    .section-title span { color: var(--muted); font-size: 10px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px 12px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; color: #4f5d5f; font-size: 11px; font-weight: 650; }
+    .field label em { color: #96a19e; font-size: 9px; font-style: normal; font-weight: 500; }
+    .input-wrap { position: relative; }
+    .input-wrap input, .input-wrap select {
+      width: 100%; min-height: 43px; padding: 0 46px 0 12px; border: 1px solid var(--line-dark);
+      border-radius: 11px; color: var(--ink); background: #fff; font-size: 13px; transition: border .18s ease, box-shadow .18s ease;
+    }
+    .input-wrap select { appearance: none; padding-right: 34px; }
+    .input-wrap input:hover, .input-wrap select:hover { border-color: #96aba4; }
+    .input-wrap input:focus, .input-wrap select:focus { border-color: var(--brand); box-shadow: 0 0 0 4px rgba(15, 92, 85, .08); outline: none; }
+    .unit { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); color: #8a9693; font-size: 10px; pointer-events: none; }
+    .select-arrow { position: absolute; right: 12px; top: 50%; transform: translateY(-52%); color: #7e8987; font-size: 10px; pointer-events: none; }
+    .field-hint { margin-top: 5px; color: #899491; font-size: 9px; line-height: 1.5; }
+    .field.required label::after {
+      content: "必填"; margin-left: auto; border-radius: 999px; padding: 2px 6px;
+      color: #a34923; background: var(--orange-soft); font-size: 8px; font-weight: 800;
+    }
+    .field.required .input-wrap input, .field.required .input-wrap select { border-color: #c9d7d0; background: #fffef8; }
+    .field.missing .input-wrap input, .field.missing .input-wrap select { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(216,104,44,.08); }
+    .input-wrap input[readonly] { color: #52615f; background: #f0f4f1; cursor: default; }
+    .system-tag { display: inline-flex; margin-left: auto; border-radius: 999px; padding: 2px 6px; color: var(--brand); background: var(--brand-soft); font-size: 8px; font-style: normal; font-weight: 800; }
+    .location-box { grid-column: 1 / -1; border: 1px solid #c9ddd5; border-radius: 14px; padding: 12px; background: linear-gradient(135deg, #edf7f3, #f8fbf7); }
+    .location-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .location-copy strong { display: block; margin-bottom: 3px; font-size: 11px; }
+    .location-copy span { display: block; color: var(--muted); font-size: 9px; line-height: 1.5; }
+    .location-state { display: flex; align-items: center; gap: 7px; margin-top: 9px; color: var(--brand); font-size: 9px; font-weight: 700; }
+    .location-state::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #7baaa0; }
+    .location-state.loading::before { animation: pulse 1s infinite; }
+    .location-state.error { color: var(--orange); }
+    .location-state.error::before { background: var(--orange); }
+    .policy-note { display: flex; align-items: flex-start; gap: 7px; margin-top: 7px; border-radius: 9px; padding: 8px 9px; color: #6c6253; background: var(--cream); font-size: 9px; line-height: 1.55; }
+    .policy-note a { color: var(--brand); font-weight: 700; text-decoration: none; }
+    @keyframes pulse { 50% { opacity: .35; transform: scale(.75); } }
+    .policy-match-card { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; border: 1px solid #c9ddd5; border-radius: 14px; padding: 13px; background: #f0f7f4; }
+    .policy-match-copy span { display: block; margin-bottom: 4px; color: var(--muted); font-size: 9px; }
+    .policy-match-copy strong { display: block; color: var(--brand-strong); font-size: 13px; }
+    .policy-match-status { margin-top: 4px; color: #7b8986; font-size: 9px; }
+    .policy-details { grid-column: 1 / -1; border-top: 1px dashed var(--line); padding-top: 8px; }
+    .policy-details > summary { cursor: pointer; color: var(--brand); font-size: 10px; font-weight: 750; list-style: none; }
+    .policy-details > summary::-webkit-details-marker { display: none; }
+    .policy-details > summary::after { content: " +"; }
+    .policy-details[open] > summary::after { content: " −"; }
+    .policy-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px 12px; margin-top: 13px; }
+
+    .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+    .switch-row:last-child { border-bottom: 0; }
+    .switch-copy strong { display: block; margin-bottom: 2px; font-size: 11px; }
+    .switch-copy span { display: block; color: var(--muted); font-size: 9px; line-height: 1.5; }
+    .switch { position: relative; flex: 0 0 auto; width: 39px; height: 23px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; inset: 0; border-radius: 999px; background: #d7ded9; transition: .22s ease; }
+    .slider::before { content: ""; position: absolute; width: 17px; height: 17px; left: 3px; top: 3px; border-radius: 50%; background: white; box-shadow: 0 2px 5px rgba(0,0,0,.16); transition: .22s ease; }
+    .switch input:checked + .slider { background: var(--brand); }
+    .switch input:checked + .slider::before { transform: translateX(16px); }
+
+    .advanced-group { border: 0; }
+    .advanced-group > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 17px 22px; color: var(--brand-strong); background: #f6f8f4; cursor: pointer; font-size: 12px; font-weight: 780; list-style: none; }
+    .advanced-group > summary::-webkit-details-marker { display: none; }
+    .advanced-group > summary::after { content: "展开"; border-radius: 999px; padding: 5px 8px; color: var(--muted); background: white; font-size: 9px; font-weight: 700; }
+    .advanced-group[open] > summary::after { content: "收起"; }
+    .cost-details { grid-column: 1 / -1; border-top: 1px dashed var(--line); padding-top: 8px; }
+    .cost-details > summary { cursor: pointer; color: var(--brand); font-size: 10px; font-weight: 750; list-style: none; }
+    .cost-details > summary::-webkit-details-marker { display: none; }
+    .cost-details > summary::after { content: " +"; }
+    .cost-details[open] > summary::after { content: " −"; }
+    .cost-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px 12px; margin-top: 13px; }
+
+    .results { min-width: 0; display: grid; gap: 16px; }
+    .decision-card { overflow: hidden; }
+    .decision-head { padding: 24px 26px 22px; background: linear-gradient(135deg, #fffefa 0%, #f0f6ee 100%); }
+    .decision-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+    .decision-label { color: var(--brand); font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+    .decision-head h2 { max-width: 720px; margin: 9px 0 8px; font-size: clamp(24px, 3vw, 38px); line-height: 1.18; letter-spacing: -.035em; }
+    .decision-head h2 span { color: var(--brand); }
+    .decision-head p { max-width: 760px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .decision-action { display: none; margin-top: 15px; }
+    .decision-action.show { display: inline-flex; }
+    .confidence { flex: 0 0 auto; min-width: 108px; text-align: right; }
+    .confidence span { display: inline-flex; align-items: center; border-radius: 999px; padding: 7px 10px; font-size: 10px; font-weight: 750; }
+    .confidence .estimated { color: #8b541e; background: var(--orange-soft); }
+    .confidence .checked { color: var(--brand); background: var(--brand-soft); }
+
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+    .metric { position: relative; min-width: 0; padding: 19px 20px 21px; border-right: 1px solid var(--line); }
+    .metric:last-child { border-right: 0; }
+    .metric-label { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; color: var(--muted); font-size: 10px; font-weight: 650; }
+    .metric-value { overflow: hidden; text-overflow: ellipsis; color: var(--ink); font-size: clamp(20px, 2.2vw, 30px); font-weight: 780; letter-spacing: -.035em; white-space: nowrap; }
+    .metric-value.positive { color: var(--brand); }
+    .metric-value.negative { color: var(--red); }
+    .metric-note { margin-top: 5px; color: #8c9794; font-size: 9px; line-height: 1.45; }
+    .metric.focus { color: white; background: var(--brand-strong); }
+    .metric.focus .metric-label, .metric.focus .metric-note { color: rgba(255,255,255,.7); }
+    .metric.focus .metric-value, .metric.focus .metric-value.positive { color: var(--lime); }
+    .metric.focus .metric-value.negative { color: #ffd0ca; }
+
+    .insight-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px 16px 16px; border-top: 1px solid var(--line); background: #fbfcf8; }
+    .insight { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; background: white; }
+    .insight strong { display: block; margin-bottom: 3px; font-size: 10px; }
+    .insight p { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.55; }
+    .insight-icon { flex: 0 0 auto; width: 25px; height: 25px; display: grid; place-items: center; border-radius: 8px; background: var(--cream); font-size: 11px; }
+
+    .content-card { padding: 0; overflow: hidden; }
+    .content-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+    .tabs { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: #edf1ed; }
+    .tab { min-height: 34px; padding: 0 14px; border: 0; border-radius: 9px; color: var(--muted); background: transparent; font-size: 11px; font-weight: 750; }
+    .tab.active { color: var(--brand-strong); background: white; box-shadow: 0 2px 8px rgba(31,55,48,.08); }
+    .toolbar-actions { display: flex; gap: 8px; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .scenario-wrap { padding: 6px 20px 20px; overflow-x: auto; }
+    .scenario-cards { display: none; padding: 12px; gap: 10px; }
+    .scenario-card { border: 1px solid var(--line); border-radius: 15px; padding: 14px; background: #fafbf8; }
+    .scenario-card.recommended { border-color: #9fc4b7; background: var(--brand-soft); box-shadow: inset 3px 0 0 var(--brand); }
+    .scenario-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .scenario-card-head strong { font-size: 14px; }
+    .scenario-card-net { color: var(--brand); font-size: 18px; font-weight: 800; letter-spacing: -.03em; }
+    .scenario-card-net.negative { color: var(--red); }
+    .scenario-card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .scenario-card-grid div { border-radius: 10px; padding: 9px; background: rgba(255,255,255,.72); }
+    .scenario-card-grid span { display: block; color: var(--muted); font-size: 9px; }
+    .scenario-card-grid b { display: block; margin-top: 4px; font-size: 11px; }
+    .formula-card { margin: 0 20px 20px; overflow: hidden; border: 1px solid #cbdcd5; border-radius: 16px; background: linear-gradient(135deg, #f1f8f5, #fffefa); }
+    .formula-card > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 17px 18px; color: var(--brand-strong); cursor: pointer; font-size: 15px; font-weight: 800; list-style: none; }
+    .formula-card > summary::-webkit-details-marker { display: none; }
+    .formula-card > summary::after { content: "展开查看"; border-radius: 999px; padding: 6px 9px; color: var(--muted); background: white; font-size: 11px; font-weight: 700; }
+    .formula-card[open] > summary::after { content: "收起"; }
+    .formula-body { padding: 0 16px 16px; }
+    .formula-note { margin: 0 0 13px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .formula-list { display: grid; gap: 10px; }
+    .formula-overview { border-radius: 15px; padding: 16px 17px; color: white; background: var(--brand-strong); }
+    .formula-overview small { display: block; margin-bottom: 7px; color: var(--lime); font-size: 11px; font-weight: 800; }
+    .formula-overview strong { display: block; font-size: 22px; line-height: 1.35; letter-spacing: -.02em; }
+    .formula-overview p { margin: 9px 0 0; color: rgba(255,255,255,.78); font-size: 13px; line-height: 1.65; }
+    .formula-step { overflow: hidden; border: 1px solid rgba(202,218,211,.95); border-radius: 13px; background: rgba(255,255,255,.86); }
+    .formula-step > summary { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px; padding: 13px 14px; cursor: pointer; list-style: none; }
+    .formula-step > summary::-webkit-details-marker { display: none; }
+    .formula-step > summary::after { content: "+"; color: var(--brand); font-size: 18px; font-weight: 500; }
+    .formula-step[open] > summary::after { content: "−"; }
+    .formula-index { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; color: white; background: var(--brand); font-size: 11px; font-weight: 800; }
+    .formula-step-title strong { display: block; font-size: 14px; }
+    .formula-step-title span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .formula-step-body { padding: 0 15px 15px 52px; }
+    .formula-expression { color: var(--brand-strong); font-size: 13px; font-weight: 800; line-height: 1.65; }
+    .formula-substitution { margin-top: 7px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .proposal .formula-overview strong { font-size: 18px; }
+    .proposal .formula-overview p, .proposal .formula-expression, .proposal .formula-substitution { font-size: 11px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0 9px; font-size: 11px; }
+    th { padding: 8px 10px; color: #7b8986; text-align: right; font-size: 9px; font-weight: 750; white-space: nowrap; }
+    th:first-child { text-align: left; }
+    td { padding: 13px 10px; background: #f8faf7; text-align: right; white-space: nowrap; border-top: 1px solid transparent; border-bottom: 1px solid transparent; }
+    td:first-child { border-radius: 12px 0 0 12px; text-align: left; }
+    td:last-child { border-radius: 0 12px 12px 0; }
+    tr:hover td { background: #f3f7f2; }
+    tr.recommended td { background: var(--brand-soft); border-color: #c9ded6; }
+    tr.recommended td:first-child { box-shadow: inset 3px 0 0 var(--brand); }
+    .plan-name { display: flex; align-items: center; gap: 7px; font-weight: 760; }
+    .recommended-tag { border-radius: 999px; padding: 3px 7px; color: white; background: var(--brand); font-size: 8px; font-weight: 750; }
+    .tier-tag { display: inline-flex; justify-content: center; min-width: 42px; border-radius: 999px; padding: 4px 7px; font-size: 8px; font-weight: 750; }
+    .tier-0 { color: var(--brand); background: var(--brand-soft); }
+    .tier-50 { color: var(--blue); background: var(--blue-soft); }
+    .tier-90 { color: #99601f; background: var(--orange-soft); }
+    .money-positive { color: var(--brand); font-weight: 780; }
+    .money-negative { color: var(--red); font-weight: 780; }
+    .subvalue { display: block; margin-top: 2px; color: #8c9895; font-size: 8px; font-weight: 500; }
+
+    .chart-area { padding: 6px 24px 22px; }
+    .chart-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 16px; }
+    .chart-title strong { font-size: 12px; }
+    .chart-title span { color: var(--muted); font-size: 9px; }
+    .bars { display: grid; gap: 10px; }
+    .bar-row { display: grid; grid-template-columns: 52px 1fr 76px; align-items: center; gap: 10px; }
+    .bar-label { color: var(--muted); font-size: 9px; text-align: right; }
+    .bar-track { position: relative; height: 25px; overflow: hidden; border-radius: 8px; background: #edf1ec; }
+    .bar { height: 100%; border-radius: 8px; transition: width .3s ease; min-width: 2px; }
+    .bar.positive { background: linear-gradient(90deg, #7eb7a3, var(--brand)); }
+    .bar.negative { background: linear-gradient(90deg, #e4a29c, var(--red)); }
+    .bar.zero { background: #cbd4ce; }
+    .bar-amount { font-size: 9px; font-weight: 750; }
+
+    .proposal { padding: 28px; background: #fffefa; }
+    .proposal-header { display: flex; justify-content: space-between; gap: 20px; padding-bottom: 22px; border-bottom: 2px solid var(--ink); }
+    .proposal-kicker { color: var(--brand); font-size: 9px; font-weight: 800; letter-spacing: .12em; }
+    .proposal h2 { margin: 7px 0 6px; font-size: 23px; letter-spacing: -.03em; }
+    .proposal-meta { color: var(--muted); font-size: 9px; line-height: 1.6; }
+    .proposal-summary { display: grid; grid-template-columns: 1.2fr .8fr; gap: 16px; margin: 22px 0; }
+    .proposal-lead { border-radius: 16px; padding: 18px; background: var(--brand-strong); color: white; }
+    .proposal-lead small { display: block; margin-bottom: 8px; color: var(--lime); font-size: 9px; font-weight: 750; }
+    .proposal-lead strong { display: block; font-size: 20px; line-height: 1.35; }
+    .proposal-lead p { margin: 9px 0 0; color: rgba(255,255,255,.7); font-size: 9px; line-height: 1.65; }
+    .proposal-amounts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .proposal-amount { border: 1px solid var(--line); border-radius: 13px; padding: 12px; background: #fafbf7; }
+    .proposal-amount span { display: block; color: var(--muted); font-size: 8px; }
+    .proposal-amount strong { display: block; margin-top: 5px; font-size: 14px; }
+    .proposal-section { margin-top: 22px; }
+    .proposal-section h3 { display: flex; align-items: center; gap: 9px; margin: 0 0 12px; font-size: 13px; }
+    .proposal-section h3 i { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 8px; color: var(--brand); background: var(--brand-soft); font-size: 9px; font-style: normal; }
+    .proposal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+    .proposal-item { border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+    .proposal-item span { display: block; color: var(--muted); font-size: 8px; }
+    .proposal-item strong { display: block; margin-top: 4px; font-size: 11px; }
+    .check-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .check-item { display: flex; gap: 8px; align-items: flex-start; border-radius: 11px; padding: 10px 11px; background: #f7f9f6; color: var(--muted); font-size: 9px; line-height: 1.45; }
+    .check-state { flex: 0 0 auto; width: 17px; height: 17px; display: grid; place-items: center; border-radius: 50%; font-size: 8px; font-weight: 800; }
+    .check-state.yes { color: var(--brand); background: var(--brand-soft); }
+    .check-state.pending { color: #8d571e; background: var(--orange-soft); }
+    .risk-box { border-left: 3px solid var(--orange); border-radius: 0 13px 13px 0; padding: 14px 16px; background: var(--orange-soft); color: #70441e; font-size: 9px; line-height: 1.75; }
+    .report-details { margin-top: 20px; border: 1px solid var(--line); border-radius: 13px; overflow: hidden; background: #fafbf7; }
+    .report-details summary { cursor: pointer; padding: 13px 15px; color: var(--brand-strong); font-size: 10px; font-weight: 750; list-style: none; }
+    .report-details summary::-webkit-details-marker { display: none; }
+    .report-details summary::after { content: "+"; float: right; font-size: 14px; line-height: 1; }
+    .report-details[open] summary::after { content: "−"; }
+    .report-details .proposal-grid { padding: 0 13px 13px; }
+    .proposal-footer { margin-top: 22px; padding-top: 13px; border-top: 1px solid var(--line); color: #8e9895; font-size: 8px; line-height: 1.65; }
+
+    .bottom-note { display: flex; gap: 10px; align-items: flex-start; padding: 15px 18px; border-radius: var(--radius-md); color: #6e6251; background: rgba(255, 247, 229, .86); border: 1px solid #ead7b7; font-size: 10px; line-height: 1.65; }
+
+    .toast { position: fixed; z-index: 20; left: 50%; bottom: 26px; transform: translate(-50%, 18px); opacity: 0; pointer-events: none; border-radius: 12px; padding: 11px 15px; color: white; background: #153d38; box-shadow: var(--shadow); font-size: 11px; font-weight: 700; transition: opacity .2s ease, transform .2s ease; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .mobile-actions { display: none; }
+
+    @media (max-width: 1100px) {
+      .workspace { grid-template-columns: 350px minmax(0, 1fr); }
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .metric:nth-child(2) { border-right: 0; }
+      .metric:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+      .proposal-summary { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 860px) {
+      .app-shell { padding: 14px 16px 54px; }
+      .hero { padding: 30px 25px; }
+      .hero-inner { grid-template-columns: 1fr; gap: 24px; }
+      .hero-proof { grid-template-columns: 1fr 1fr; }
+      .formula-terms { grid-template-columns: 1fr 1fr; }
+      .workspace { grid-template-columns: 1fr; }
+      .input-panel { position: relative; top: auto; order: 1; }
+      .results { order: 2; }
+      .insight-strip { grid-template-columns: 1fr; }
+      .mobile-actions {
+        position: fixed; z-index: 18; left: 12px; right: 12px; bottom: max(10px, env(safe-area-inset-bottom));
+        display: grid; grid-template-columns: 1fr 1.25fr; gap: 8px; border: 1px solid rgba(202,212,204,.9);
+        border-radius: 16px; padding: 8px; background: rgba(255,254,250,.94); box-shadow: 0 14px 38px rgba(26,54,48,.18); backdrop-filter: blur(14px);
+      }
+      .mobile-actions .btn { min-height: 46px; }
+      .bottom-note { margin-bottom: 68px; }
+    }
+    @media (max-width: 560px) {
+      .topbar { align-items: flex-start; }
+      .brand small, .status-pill, #resetBtn { display: none; }
+      .app-shell { padding: 10px 12px 96px; }
+      .topbar { min-height: 48px; margin-bottom: 10px; }
+      .brand-mark { width: 34px; height: 34px; border-radius: 11px; }
+      .hero { padding: 24px 20px; border-radius: 20px; }
+      .hero h1 { margin-top: 8px; font-size: 29px; }
+      .hero p { font-size: 13px; line-height: 1.65; }
+      .hero-proof { display: none; }
+      .workflow { padding: 15px 2px 13px; }
+      .step { font-size: 10px; }
+      .step-number { width: 22px; height: 22px; }
+      .policy-explainer { margin-bottom: 14px; border-radius: 18px; }
+      .policy-explainer-head { display: block; padding: 18px 16px 14px; }
+      .policy-explainer-head .btn { width: 100%; margin-top: 13px; }
+      .policy-explainer h2 { font-size: 20px; }
+      .policy-explainer-head p { font-size: 12px; }
+      .master-formula { margin: 0 12px; padding: 15px 12px; border-radius: 14px; font-size: 16px; text-align: left; }
+      .formula-terms { grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 12px 14px; }
+      .formula-term { padding: 11px; }
+      .formula-term b { font-size: 12px; }
+      .formula-term span { font-size: 10px; }
+      .live-formula { display: block; padding: 13px 16px; }
+      .live-formula strong { font-size: 13px; }
+      .panel-head { padding: 20px 18px 16px; }
+      .panel-head h2 { font-size: 20px; }
+      .example-badge { display: none; }
+      .quick-guide { margin: 14px 14px 0; padding: 14px; }
+      .quick-guide strong { font-size: 14px; }
+      .quick-guide p { font-size: 12px; }
+      .quick-guide-list span, .form-progress-copy { font-size: 10px; }
+      .form-section { padding: 19px 18px; }
+      .section-title h3 { font-size: 15px; }
+      .form-grid { grid-template-columns: 1fr; gap: 16px; }
+      .field.full { grid-column: auto; }
+      .field label { margin-bottom: 8px; font-size: 13px; }
+      .field.required label::after { padding: 3px 8px; font-size: 9px; }
+      .input-wrap input, .input-wrap select { min-height: 52px; border-width: 1.5px; border-radius: 13px; padding-left: 14px; font-size: 16px; }
+      .unit { font-size: 11px; }
+      .field-hint, .location-copy span, .location-state, .policy-note { font-size: 11px; }
+      .location-box { grid-column: auto; padding: 14px; }
+      .location-copy strong { font-size: 13px; }
+      .policy-match-card { grid-template-columns: 1fr; padding: 14px; }
+      .policy-match-copy span, .policy-match-status { font-size: 10px; }
+      .policy-match-copy strong { font-size: 16px; }
+      .policy-details-grid { grid-template-columns: 1fr; }
+      .policy-details > summary { font-size: 12px; }
+      .decision-top { display: block; }
+      .confidence { margin-top: 14px; text-align: left; }
+      .decision-head { padding: 21px 19px 18px; }
+      .decision-head h2 { font-size: 28px; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .metric { padding: 15px 14px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+      .metric:nth-child(2n) { border-right: 0; }
+      .metric:nth-child(n+3) { border-bottom: 0; }
+      .metric-value { font-size: 22px; }
+      .metric-note { display: none; }
+      .toolbar-actions .btn:not(.primary) { display: none; }
+      .content-toolbar { align-items: flex-start; flex-direction: column; }
+      .scenario-wrap { display: none; }
+      .scenario-cards { display: grid; }
+      .chart-area { padding: 6px 16px 18px; }
+      .proposal { padding: 20px; }
+      .proposal-header { flex-direction: column; }
+      .proposal-summary { margin-top: 16px; }
+      .proposal-amounts, .proposal-grid, .check-list { grid-template-columns: 1fr; }
+      .proposal-amount { padding: 14px; }
+      .proposal-amount span { font-size: 10px; }
+      .proposal-amount strong { font-size: 18px; }
+      .scenario-card-grid { grid-template-columns: 1fr 1fr 1fr; }
+      .formula-card { margin: 0 12px 16px; }
+      .formula-card > summary { padding: 16px; font-size: 16px; }
+      .formula-body { padding: 0 13px 13px; }
+      .formula-note { font-size: 13px; }
+      .formula-overview { padding: 16px; }
+      .formula-overview strong { font-size: 24px; }
+      .formula-overview p { font-size: 14px; }
+      .formula-step > summary { grid-template-columns: 30px 1fr auto; padding: 14px; }
+      .formula-step-title strong { font-size: 15px; }
+      .formula-step-title span, .formula-expression, .formula-substitution { font-size: 13px; }
+      .formula-step-body { padding: 0 14px 15px; }
+      .advanced-group > summary { padding: 18px; font-size: 13px; }
+      .cost-details-grid { grid-template-columns: 1fr; }
+      .cost-details > summary { font-size: 12px; }
+      .mobile-actions { grid-template-columns: 1.05fr 1fr; }
+    }
+
+    @media print {
+      body { background: white; }
+      .app-shell { max-width: none; padding: 0; }
+      .topbar, .hero, .workflow, .policy-explainer, .input-panel, .decision-card, .content-toolbar, #comparePane, .bottom-note, .toast, .mobile-actions { display: none !important; }
+      .workspace { display: block; }
+      .results, .panel, .content-card { display: block; border: 0; box-shadow: none; }
+      #proposalPane { display: block !important; }
+      .proposal { padding: 0; }
+      .formula-step > .formula-step-body { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">益</div>
+        <div>残疾人就业效益测算<small>真实就业 · 合规测算 · 方案决策</small></div>
+      </div>
+      <div class="top-actions">
+        <span class="status-pill"><i class="status-dot"></i>仅用于真实就业方案</span>
+        <button class="btn ghost" id="resetBtn" type="button">清空重算</button>
+        <button class="btn" id="printTopBtn" type="button">导出方案</button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="hero-inner">
+        <div>
+          <div class="eyebrow">广东企业快速测算</div>
+          <h1>5项数据，看懂公司<br>能省多少、值不值得。</h1>
+          <p>先算不招聘要交多少，再比较招聘后的残保金节省、真实用工成本和企业净收益。结果不会把“免征”误当成“赚钱”。</p>
+        </div>
+        <div class="hero-proof">
+          <div class="proof-item"><span class="proof-icon">✓</span><span>按月折算在岗人数</span></div>
+          <div class="proof-item"><span class="proof-icon">↗</span><span>自动识别分档系数</span></div>
+          <div class="proof-item"><span class="proof-icon">¥</span><span>服务费只分正向净增益</span></div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="workflow" aria-label="测算流程">
+      <div class="step active"><span class="step-number">1</span>先懂总公式</div><i class="step-line"></i>
+      <div class="step active"><span class="step-number">2</span>再填企业数据</div><i class="step-line"></i>
+      <div class="step active"><span class="step-number">3</span>看老板结论</div>
+    </nav>
+
+    <section class="policy-explainer" aria-labelledby="masterFormulaTitle">
+      <div class="policy-explainer-head">
+        <div>
+          <div class="policy-explainer-kicker">HR先看懂这一条</div>
+          <h2 id="masterFormulaTitle">残疾人就业保障金总公式</h2>
+          <p>制造业与其他一般企业使用同一套残保金公式。系统会自动处理广东1.5%规定比例、工资上限和分档减缴。<a href="https://guangdong.chinatax.gov.cn/siteapps/webpage/gdtax/bszn/bszn_content.jsp?code=95B76568FEED1DB8E053D01F1296F105" target="_blank" rel="noopener">查看广东税务口径</a></p>
+        </div>
+        <button class="btn primary" id="formulaStartBtn" type="button">看懂了，开始填写</button>
+      </div>
+      <div class="master-formula">
+        应缴残保金 <span class="formula-muted">＝</span>
+        <span class="formula-accent">未达标差额人数</span> ×
+        <span class="formula-accent">计征工资基数</span> ×
+        <span class="formula-accent">征收系数</span>
+      </div>
+      <div class="formula-terms">
+        <div class="formula-term"><b>① 未达标差额人数</b><span>max（0，上年平均人数 × 1.5%－现有残疾职工年平均人数）</span></div>
+        <div class="formula-term"><b>② 计征工资基数</b><span>企业年平均工资与当地工资上限取较低值</span></div>
+        <div class="formula-term"><b>③ 征收系数</b><span>安置比例低于1%按90%；1%至1.5%按50%；达到1.5%为0</span></div>
+        <div class="formula-term"><b>④ 小企业免征</b><span>在职职工30人（含）以下企业，现行优惠期内免征</span></div>
+      </div>
+      <div class="live-formula">
+        <div><span>当前企业数据代入</span><strong id="liveFormulaText">填写平均人数和工资总额后，这里会自动代入完整算式</strong></div>
+        <span id="liveFormulaPolicy">分档减缴及30人以下免征政策延续至2027年12月31日</span>
+      </div>
+    </section>
+
+    <main class="workspace">
+      <aside class="panel input-panel" aria-label="测算参数">
+        <div class="panel-head">
+          <div><h2>HR先填企业数据</h2><p>优先填写人数、工资总额和现有残疾员工，其他参数系统先提供参考值。</p></div>
+          <span class="example-badge">3项企业数据</span>
+        </div>
+
+        <div class="quick-guide">
+          <strong>HR只需先找两份资料</strong>
+          <p>从社保/花名册确认上年平均人数，从工资表确认上年度工资总额；再填写现有已认定残疾职工年平均人数。政策参数由系统匹配。</p>
+          <div class="quick-guide-list"><span>① 平均人数</span><span>② 工资总额</span><span>③ 现有残疾员工</span><span>系统匹配城市参数</span></div>
+          <div class="form-progress">
+            <div class="form-progress-track"><div class="form-progress-bar" id="formProgressBar"></div></div>
+            <div class="form-progress-copy"><span id="formProgressText">已完成 3/5 项</span><span id="formProgressNext">还差平均人数、工资总额</span></div>
+          </div>
+        </div>
+
+        <section class="form-section">
+          <div class="section-title"><h3>01 · 企业基本数据</h3><span>先填3项</span></div>
+          <div class="form-grid">
+            <div class="location-box">
+              <div class="location-top">
+                <div class="location-copy"><strong>自动识别广东城市</strong><span>先用IP估算；点击按钮可申请更精确的设备定位</span></div>
+                <button class="btn small primary" id="locateBtn" type="button">使用设备定位</button>
+              </div>
+              <div class="location-state loading" id="locationState">正在通过IP判断所在城市…</div>
+            </div>
+            <div class="field required">
+              <label for="city">企业所在地</label>
+              <div class="input-wrap">
+                <select id="city">
+                  <option value="广州" selected>广州市</option><option value="深圳">深圳市</option><option value="珠海">珠海市</option>
+                  <option value="汕头">汕头市</option><option value="佛山">佛山市</option><option value="韶关">韶关市</option>
+                  <option value="河源">河源市</option><option value="梅州">梅州市</option><option value="惠州">惠州市</option>
+                  <option value="汕尾">汕尾市</option><option value="东莞">东莞市</option><option value="中山">中山市</option>
+                  <option value="江门">江门市</option><option value="阳江">阳江市</option><option value="湛江">湛江市</option>
+                  <option value="茂名">茂名市</option><option value="肇庆">肇庆市</option><option value="清远">清远市</option>
+                  <option value="潮州">潮州市</option><option value="揭阳">揭阳市</option><option value="云浮">云浮市</option>
+                </select><span class="select-arrow">▼</span>
+              </div>
+            </div>
+            <div class="policy-match-card">
+              <div class="policy-match-copy"><span>系统匹配的计征工资上限</span><strong id="policySummaryAmount">正在匹配…</strong><div class="policy-match-status" id="policySummaryStatus">按所在地和年度自动判断</div></div>
+              <button class="btn small" id="useReferenceCapBtn" type="button" hidden>使用参考值试算</button>
+            </div>
+            <div class="field required">
+              <label for="staffCount">上年平均在职人数</label>
+              <div class="input-wrap"><input id="staffCount" type="number" value="" min="0" step="0.01" placeholder="例如 96"><span class="unit">人</span></div>
+              <div class="field-hint">优先取上年度12个月平均人数；初筛时可先用上月社保人数估算。</div>
+            </div>
+            <div class="field full required">
+              <label for="payrollTotalWan">上年度工资总额</label>
+              <div class="input-wrap"><input id="payrollTotalWan" type="number" value="" min="0" step="0.01" placeholder="例如 4502.40"><span class="unit">万元</span></div>
+              <div class="field-hint">从工资表或财务报表取数；不含单位承担的社保、公积金。</div>
+            </div>
+            <div class="field full required">
+              <label for="existing">现有已认定残疾职工年平均人数</label>
+              <div class="input-wrap"><input id="existing" type="number" value="0" min="0" step="0.01"><span class="unit">人</span></div>
+              <div class="field-hint">没有现有残疾职工时填0；如非全年在岗，应按当地年审结果填写年平均人数。</div>
+            </div>
+            <details class="policy-details">
+              <summary>查看或修改政策详细参数</summary>
+              <div class="policy-details-grid">
+                <div class="field full">
+                  <label for="clientName">企业名称 <em>生成报告时再填</em></label>
+                  <div class="input-wrap"><input id="clientName" type="text" value="" placeholder="选填，例如：XX科技有限公司"></div>
+                </div>
+                <div class="field required">
+                  <label for="targetYear">计划用工年度</label>
+                  <div class="input-wrap"><input id="targetYear" type="number" value="2026" min="2024" max="2027"><span class="unit">年</span></div>
+                </div>
+                <div class="field" id="districtField">
+                  <label for="district">广州所在区</label>
+                  <div class="input-wrap"><select id="district"><option value="其他" selected>除增城、从化外的其他区</option><option value="增城">增城区</option><option value="从化">从化区</option></select><span class="select-arrow">▼</span></div>
+                </div>
+                <div class="field">
+                  <label for="ratio">规定安置比例 <em class="system-tag">系统参数</em></label>
+                  <div class="input-wrap"><input id="ratio" type="number" value="1.5" min="0" max="100" step="0.1" readonly><span class="unit">%</span></div>
+                </div>
+                <div class="field">
+                  <label for="avgWage">年平均工资 <em class="system-tag">自动计算</em></label>
+                  <div class="input-wrap"><input id="avgWage" type="number" value="" min="0" step="100" readonly><span class="unit">元/年</span></div>
+                </div>
+                <div class="field full">
+                  <label for="capWage">当地计征工资上限 <em id="capStatus">自动匹配</em></label>
+                  <div class="input-wrap"><input id="capWage" type="number" value="" min="0" step="0.01" placeholder="可按电子税务局口径补充"><span class="unit">元/年</span></div>
+                  <div class="policy-note" id="policyNote">系统只自动带入已核验到对应年度的官方金额；历史数据会明确标记。</div>
+                </div>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="section-title"><h3>02 · 新增用工成本</h3><span>决定项目净收益</span></div>
+          <div class="form-grid">
+            <div class="field required">
+              <label for="startMonth">计划入职月份</label>
+              <div class="input-wrap"><input id="startMonth" type="number" value="1" min="1" max="12"><span class="unit">月</span></div>
+              <div class="field-hint">越早真实入职，当年可计入的平均安置人数越高。</div>
+            </div>
+            <div class="field required">
+              <label for="monthlyWage">税前月工资</label>
+              <div class="input-wrap"><input id="monthlyWage" type="number" value="2500" min="0" step="10"><span class="unit">元/月</span></div>
+            </div>
+            <div class="field required">
+              <label for="socialCost">企业承担社保公积金</label>
+              <div class="input-wrap"><input id="socialCost" type="number" value="1900" min="0" step="10"><span class="unit">元/月</span></div>
+              <div class="field-hint">当前为估算值，正式方案请向财务核对缴费基数与单位承担比例。</div>
+            </div>
+            <details class="cost-details">
+              <summary>特殊认定与其他成本（选填）</summary>
+              <div class="cost-details-grid">
+                <div class="field">
+                  <label for="countFactor">人数认定系数</label>
+                  <div class="input-wrap"><select id="countFactor"><option value="1" selected>普通 · 按1人</option><option value="2">符合条件 · 按2人</option></select><span class="select-arrow">▼</span></div>
+                </div>
+                <div class="field">
+                  <label for="otherCost">其他月度成本</label>
+                  <div class="input-wrap"><input id="otherCost" type="number" value="0" min="0" step="10"><span class="unit">元/月</span></div>
+                </div>
+                <div class="field">
+                  <label for="oneOffCost">一次性成本</label>
+                  <div class="input-wrap"><input id="oneOffCost" type="number" value="0" min="0" step="10"><span class="unit">元/人</span></div>
+                </div>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <details class="advanced-group">
+          <summary>进阶设置：所得税、合作报价与合规预检</summary>
+        <section class="form-section">
+          <div class="section-title"><h3>03 · 收益与合作报价</h3><span>服务方设置</span></div>
+          <div class="form-grid">
+            <div class="field full">
+              <label for="providerName">服务商名称</label>
+              <div class="input-wrap"><input id="providerName" type="text" value="广州德谦科技有限公司（德谦星火助残中心）"></div>
+            </div>
+            <div class="field">
+              <label for="incomeTaxRate">企业所得税率</label>
+              <div class="input-wrap"><input id="incomeTaxRate" type="number" value="25" min="0" max="100" step="0.1"><span class="unit">%</span></div>
+            </div>
+            <div class="field">
+              <label for="successRate">正向净增益分成</label>
+              <div class="input-wrap"><input id="successRate" type="number" value="20" min="0" max="100" step="0.5"><span class="unit">%</span></div>
+            </div>
+            <div class="field full">
+              <label for="fixedFee">固定实施服务费</label>
+              <div class="input-wrap"><input id="fixedFee" type="number" value="0" min="0" step="100"><span class="unit">元</span></div>
+            </div>
+          </div>
+          <div class="switch-row">
+            <div class="switch-copy"><strong>纳入所得税潜在节省</strong><span>仅适合预计盈利且具备加计扣除条件的企业</span></div>
+            <label class="switch"><input id="includeIncomeTax" type="checkbox"><span class="slider"></span></label>
+          </div>
+          <div class="switch-row">
+            <div class="switch-copy"><strong>当地政策参数已核验</strong><span>未勾选时，结果统一标记为“初步估算”</span></div>
+            <label class="switch"><input id="policyVerified" type="checkbox"><span class="slider"></span></label>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="section-title"><h3>04 · 合规条件</h3><span id="complianceCount">4项待确认</span></div>
+          <div class="switch-row">
+            <div class="switch-copy"><strong>签订一年以上劳动合同</strong><span>逐人签订并依法建立劳动关系</span></div>
+            <label class="switch"><input class="compliance-input" id="contractOk" type="checkbox"><span class="slider"></span></label>
+          </div>
+          <div class="switch-row">
+            <div class="switch-copy"><strong>实际到岗并有工作留痕</strong><span>岗位、考勤、任务和产出真实可核验</span></div>
+            <label class="switch"><input class="compliance-input" id="workOk" type="checkbox"><span class="slider"></span></label>
+          </div>
+          <div class="switch-row">
+            <div class="switch-copy"><strong>按月足额缴纳社保</strong><span>社保记录与劳动关系、在岗月份一致</span></div>
+            <label class="switch"><input class="compliance-input" id="socialOk" type="checkbox"><span class="slider"></span></label>
+          </div>
+          <div class="switch-row">
+            <div class="switch-copy"><strong>银行发薪且不低于最低工资</strong><span>工资流水、个税申报与员工确认一致</span></div>
+            <label class="switch"><input class="compliance-input" id="salaryOk" type="checkbox"><span class="slider"></span></label>
+          </div>
+        </section>
+        </details>
+      </aside>
+
+      <section class="results" aria-live="polite">
+        <article class="panel decision-card">
+          <div class="decision-head">
+            <div class="decision-top">
+              <div>
+                <div class="decision-label">老板只看这4个答案</div>
+                <h2 id="decisionTitle">正在生成建议…</h2>
+                <p id="decisionCopy">根据当前数据比较不同招聘人数后的残保金、用工成本与企业净收益。</p>
+                <button class="btn primary decision-action" id="completeInputsBtn" type="button">去填写核心数据</button>
+              </div>
+              <div class="confidence"><span class="estimated" id="confidenceBadge">初步估算</span></div>
+            </div>
+          </div>
+          <div class="metrics">
+            <div class="metric">
+              <div class="metric-label">① 现在要交多少钱？</div>
+              <div class="metric-value" id="baselineDue">等待测算</div>
+              <div class="metric-note" id="baselineTier">保持现状预计要交的残保金</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">② 合作后还要交多少？</div>
+              <div class="metric-value" id="recommendedCount">等待测算</div>
+              <div class="metric-note" id="recommendedRatio">按推荐招聘方案测算</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">③ 扣完工资社保后能省多少？</div>
+              <div class="metric-value" id="recommendedCost">等待测算</div>
+              <div class="metric-note">残保金节省－新增工资社保等用工成本，暂未扣服务费</div>
+            </div>
+            <div class="metric focus">
+              <div class="metric-label">④ 扣完全部成本净省多少？</div>
+              <div class="metric-value" id="clientNet">等待测算</div>
+              <div class="metric-note">已扣用工成本和合作服务费</div>
+            </div>
+          </div>
+          <div class="insight-strip">
+            <div class="insight"><span class="insight-icon">◎</span><div><strong id="fullExemptionTitle">完全免征需要测算</strong><p id="fullExemptionCopy">招聘人数变化会同时影响企业总人数，系统已一并计算。</p></div></div>
+            <div class="insight"><span class="insight-icon">!</span><div><strong id="riskTitle">关键条件待确认</strong><p id="riskCopy">优惠能否实现取决于真实用工、年审材料和当地执行口径。</p></div></div>
+          </div>
+        </article>
+
+        <article class="panel content-card">
+          <div class="content-toolbar">
+            <div class="tabs" role="tablist">
+              <button class="tab active" type="button" data-tab="comparePane">方案对比</button>
+              <button class="tab" type="button" data-tab="proposalPane">合作方案</button>
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn small" id="copySummaryBtn" type="button">复制摘要</button>
+              <button class="btn small" id="copyProposalBtn" type="button">复制方案</button>
+              <button class="btn small primary" id="printBtn" type="button">导出合作方案</button>
+            </div>
+          </div>
+
+          <div class="tab-pane active" id="comparePane">
+            <div class="scenario-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>招聘方案</th><th>预计残保金</th><th>预计节省</th><th>新增用工成本</th><th>企业净收益</th>
+                  </tr>
+                </thead>
+                <tbody id="scenarioBody"></tbody>
+              </table>
+            </div>
+            <div class="scenario-cards" id="scenarioCards"></div>
+            <details class="formula-card" open>
+              <summary>怎么算出来的？先看总结果</summary>
+              <div class="formula-body">
+                <p class="formula-note">第一眼只看最终净省；想核对哪一笔，再展开下面对应的问题。</p>
+                <div class="formula-list" id="formulaList"></div>
+              </div>
+            </details>
+            <div class="chart-area">
+              <div class="chart-title"><strong>企业净收益对比</strong><span>已扣除用工成本和服务费</span></div>
+              <div class="bars" id="bars"></div>
+            </div>
+          </div>
+
+          <div class="tab-pane" id="proposalPane">
+            <div class="proposal" id="proposalDocument">
+              <div class="proposal-header">
+                <div><div class="proposal-kicker">合作建议 · 自动生成</div><h2>残疾人真实就业合作方案</h2><div class="proposal-meta" id="proposalParties">客户企业 × 服务商</div></div>
+                <div class="proposal-meta" id="proposalDate">测算年度：等待填写</div>
+              </div>
+
+              <div class="proposal-summary">
+                <div class="proposal-lead"><small>建议结论</small><strong id="proposalLead">等待测算</strong><p id="proposalLeadNote">填写核心数据后自动生成</p></div>
+                <div class="proposal-amounts">
+                  <div class="proposal-amount"><span>现在预计要交</span><strong id="proposalBenefit">等待测算</strong></div>
+                  <div class="proposal-amount"><span>扣工资社保后毛收益</span><strong id="proposalCost">等待测算</strong></div>
+                  <div class="proposal-amount"><span>扣除全部成本后净省</span><strong id="proposalNet">等待测算</strong></div>
+                </div>
+              </div>
+
+              <section class="proposal-section">
+                <h3><i>01</i>为什么推荐这个方案</h3>
+                <div class="proposal-grid" id="proposalReasons"></div>
+              </section>
+
+              <details class="report-details" open>
+                <summary>怎么算出来的？先总后分</summary>
+                <div class="formula-body"><div class="formula-list" id="proposalFormula"></div></div>
+              </details>
+
+              <section class="proposal-section">
+                <h3><i>02</i>合作与收费</h3>
+                <div class="proposal-grid" id="proposalCommercial"></div>
+              </section>
+
+              <section class="proposal-section">
+                <h3><i>03</i>执行前必须确认</h3>
+                <div class="check-list" id="proposalChecks"></div>
+              </section>
+
+              <details class="report-details">
+                <summary>查看测算依据与采用的假设</summary>
+                <div class="proposal-grid" id="proposalBasics"></div>
+              </details>
+
+              <section class="proposal-section">
+                <h3><i>04</i>政策口径与风险说明</h3>
+                <div class="risk-box" id="proposalRisk"></div>
+              </section>
+
+              <div class="proposal-footer">本测算仅供经营决策参考，不构成税务、法律或政府审批结论，最终以企业实际情况及主管部门审核口径为准。</div>
+            </div>
+          </div>
+        </article>
+
+        <div class="bottom-note"><span>提示</span><div>本工具只支持真实就业测算。入职月份按实际发生月份计算，不倒填、不补造考勤或工资社保记录；政策参数未核验时，结果仅作为初步估算。</div></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="mobile-actions">
+    <button class="btn" id="mobileEditBtn" type="button">填写/修改数据</button>
+    <button class="btn primary" id="mobileReportBtn" type="button">查看老板结论</button>
+  </div>
+  <div class="toast" id="toast">已复制</div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const CITY_POLICY = {
+      '广州': { minWage: 2500, cap: 36292, capByDistrict: { '其他': 36292, '增城': 30804.8, '从化': 25335.2 }, verifiedThrough: 2021, source: 'https://guangdong.chinatax.gov.cn/gdsw/gzsw_cjrjybzj/2020-07/29/content_db34b5deb39845de936db9ef22e3ca50.shtml', sourceTitle: '广州税务2017年征收标准（原政策核验至2021所属期）' },
+      '深圳': { minWage: 2520, cap: null },
+      '珠海': { minWage: 2080, cap: null }, '佛山': { minWage: 2080, cap: null },
+      '东莞': { minWage: 2080, cap: 36993, verifiedThrough: 2025, source: 'https://guangdong.chinatax.gov.cn/gdsw/dgsw_tzgg/2025-08/19/content_965e1f1c0ad14a4fa80368730c431044.shtml', sourceTitle: '东莞2025年征收通告' },
+      '中山': { minWage: 2080, cap: null },
+      '汕头': { minWage: 1850, cap: null }, '惠州': { minWage: 1850, cap: null },
+      '江门': { minWage: 1850, cap: null }, '湛江': { minWage: 1850, cap: null }, '肇庆': { minWage: 1850, cap: null },
+      '韶关': { minWage: 1750, cap: null }, '河源': { minWage: 1750, cap: null }, '梅州': { minWage: 1750, cap: null },
+      '汕尾': { minWage: 1750, cap: null }, '阳江': { minWage: 1750, cap: null }, '茂名': { minWage: 1750, cap: null },
+      '清远': { minWage: 1750, cap: null }, '潮州': { minWage: 1750, cap: null }, '揭阳': { minWage: 1750, cap: null }, '云浮': { minWage: 1750, cap: null }
+    };
+    const CITY_ALIASES = {
+      guangzhou:'广州', shenzhen:'深圳', zhuhai:'珠海', shantou:'汕头', foshan:'佛山', shaoguan:'韶关',
+      heyuan:'河源', meizhou:'梅州', huizhou:'惠州', shanwei:'汕尾', dongguan:'东莞', zhongshan:'中山',
+      jiangmen:'江门', yangjiang:'阳江', zhanjiang:'湛江', maoming:'茂名', zhaoqing:'肇庆', qingyuan:'清远',
+      chaozhou:'潮州', jieyang:'揭阳', yunfu:'云浮'
+    };
+    const MIN_WAGE_SOURCE = 'https://www.gdfao.gd.gov.cn/bsfw/wsgl/fwjg/content/post_1288091.html';
+    let locationSource = '手动选择';
+    let policyMeta = {};
+
+    const inputIds = [
+      'clientName','providerName','city','district','targetYear','staffCount','ratio','payrollTotalWan','avgWage','capWage','existing',
+      'startMonth','countFactor','monthlyWage','socialCost','otherCost','oneOffCost','incomeTaxRate',
+      'successRate','fixedFee','includeIncomeTax','policyVerified','contractOk','workOk','socialOk','salaryOk'
+    ];
+
+    const initialValues = {};
+    inputIds.forEach(id => {
+      const el = $(id);
+      initialValues[id] = el.type === 'checkbox' ? el.checked : el.value;
+    });
+
+    function num(id) {
+      const value = Number($(id).value);
+      return Number.isFinite(value) ? Math.max(0, value) : 0;
+    }
+
+    function updateDerivedWage() {
+      const staff = num('staffCount');
+      const payroll = num('payrollTotalWan') * 10000;
+      $('avgWage').value = staff > 0 && payroll > 0 ? (payroll / staff).toFixed(2) : '';
+    }
+
+    function updateFormProgress() {
+      const items = [
+        { id: 'city', label: '所在地' },
+        { id: 'staffCount', label: '平均人数' },
+        { id: 'payrollTotalWan', label: '工资总额' },
+        { id: 'existing', label: '现有残疾员工' },
+        { id: 'startMonth', label: '入职月份' }
+      ];
+      const missing = items.filter(item => String($(item.id).value).trim() === '');
+      const done = items.length - missing.length;
+      $('formProgressBar').style.width = `${done / items.length * 100}%`;
+      $('formProgressText').textContent = `已完成 ${done}/${items.length} 项`;
+      $('formProgressNext').textContent = missing.length ? `还差${missing.map(item => item.label).join('、')}` : '核心数据已齐，可以看结论';
+      items.forEach(item => $(item.id).closest('.field')?.classList.toggle('missing', missing.some(m => m.id === item.id)));
+      return missing;
+    }
+
+    function normalizeCity(value) {
+      const raw = String(value || '').trim();
+      const lower = raw.toLowerCase().replace(/\s+/g, '');
+      for (const city of Object.keys(CITY_POLICY)) if (raw.includes(city)) return city;
+      for (const [alias, city] of Object.entries(CITY_ALIASES)) if (lower.includes(alias)) return city;
+      return null;
+    }
+
+    function normalizeDistrict(value) {
+      const raw = String(value || '').toLowerCase();
+      if (raw.includes('增城') || raw.includes('zengcheng')) return '增城';
+      if (raw.includes('从化') || raw.includes('conghua')) return '从化';
+      return '其他';
+    }
+
+    function currentCap(city, district) {
+      const policy = CITY_POLICY[city] || {};
+      if (city === '广州' && policy.capByDistrict) return policy.capByDistrict[district] || policy.cap;
+      return policy.cap;
+    }
+
+    function applyCityPolicy(updateWage = true) {
+      const city = $('city').value;
+      const district = $('district').value;
+      const year = Math.round(num('targetYear'));
+      const policy = CITY_POLICY[city] || {};
+      const cap = currentCap(city, district);
+      $('districtField').style.display = city === '广州' ? '' : 'none';
+
+      if (updateWage && policy.minWage) $('monthlyWage').value = policy.minWage;
+      const capIsCurrent = Boolean(cap && policy.verifiedThrough && year <= policy.verifiedThrough);
+      if (capIsCurrent) {
+        $('capWage').value = cap;
+        $('capWage').readOnly = true;
+        $('capWage').closest('.field').classList.remove('required');
+        const isCurrent = true;
+        $('capStatus').textContent = '已自动带入';
+        $('policyVerified').checked = true;
+        const area = city === '广州' ? (district === '其他' ? '一般区' : district + '区') : city;
+        $('policyNote').innerHTML = `${area}已自动带入${Number(cap).toLocaleString('zh-CN')}元。依据：<a href="${policy.source}" target="_blank" rel="noopener">${policy.sourceTitle}</a>；${year > policy.verifiedThrough ? year + '年度使用前仍需核验最新通告。' : '已覆盖当前选择年度。'}`;
+        policyMeta = { cap, source: policy.source, sourceTitle: policy.sourceTitle, verifiedThrough: policy.verifiedThrough, status: isCurrent ? '已核验' : '沿用历史口径' };
+        $('policySummaryAmount').textContent = `¥${Number(cap).toLocaleString('zh-CN')} / 年`;
+        $('policySummaryStatus').textContent = `${city} · ${year}年度官方口径已匹配`;
+        $('useReferenceCapBtn').hidden = true;
+      } else {
+        $('capWage').value = cap || '';
+        $('capWage').readOnly = false;
+        $('capWage').closest('.field').classList.toggle('required', !cap);
+        $('capStatus').textContent = cap ? '历史参考试算' : '待人工核验';
+        $('policyVerified').checked = false;
+        $('policyNote').innerHTML = cap ? `${city}已自动采用最近核验到的${policy.verifiedThrough}年度官方金额${Number(cap).toLocaleString('zh-CN')}元进行参考试算。该数值不代表${year}年度现行标准，正式方案仍须以电子税务局或最新官方通告核验。` : `${city}的${year}年度现行具体金额尚未内置，系统不会猜测。请根据电子税务局或当地税务、财政、残联最新通告填写；最低工资已按广东现行分区标准自动带入。`;
+        policyMeta = { cap: cap || null, referenceCap: cap || null, source: policy.source || MIN_WAGE_SOURCE, sourceTitle: policy.sourceTitle || '广东省最低工资标准', verifiedThrough: policy.verifiedThrough || null, status: cap ? `自动使用${policy.verifiedThrough}年度历史参考值·待核验` : '待人工核验', referenceOnly: Boolean(cap) };
+        $('policySummaryAmount').textContent = cap ? `参考试算 ¥${Number(cap).toLocaleString('zh-CN')} / 年` : '暂未匹配到公开金额';
+        $('policySummaryStatus').textContent = cap ? `${city} · 自动采用${policy.verifiedThrough}年度历史值；当前${year}年度待确认` : `${city} · ${year}年度需按官方口径补充`;
+        $('useReferenceCapBtn').hidden = true;
+        $('useReferenceCapBtn').dataset.cap = cap || '';
+        $('useReferenceCapBtn').dataset.year = policy.verifiedThrough || '';
+      }
+      render();
+    }
+
+    function setLocationState(message, type = '') {
+      $('locationState').textContent = message;
+      $('locationState').className = `location-state ${type}`.trim();
+    }
+
+    function applyLocatedPlace(rawCity, rawDistrict, source) {
+      const city = normalizeCity(rawCity);
+      if (!city) {
+        setLocationState('未识别到广东省内城市，请手动选择', 'error');
+        return false;
+      }
+      $('city').value = city;
+      if (city === '广州') $('district').value = normalizeDistrict(rawDistrict);
+      locationSource = source;
+      applyCityPolicy(true);
+      const districtText = city === '广州' && $('district').value !== '其他' ? $('district').value + '区' : '';
+      setLocationState(`${source}：${city}市${districtText}，已自动匹配政策参数`);
+      return true;
+    }
+
+    async function fetchJson(url, timeout = 6500) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeout);
+      try {
+        const response = await fetch(url, { signal: controller.signal, headers: { 'Accept': 'application/json' } });
+        if (!response.ok) throw new Error('request failed');
+        return await response.json();
+      } finally { clearTimeout(timer); }
+    }
+
+    async function locateByIP(silent = false) {
+      if (!silent) setLocationState('正在通过IP估算城市…', 'loading');
+      const providers = [
+        async () => {
+          const data = await fetchJson('https://ipapi.co/json/');
+          const inGuangdong = data.region_code === 'GD' || /广东|guangdong/i.test(data.region || '');
+          if (!inGuangdong) throw new Error('outside Guangdong');
+          return { city: data.city, district: '', source: 'IP估算' };
+        },
+        async () => {
+          const data = await fetchJson('https://ipwho.is/');
+          const inGuangdong = data.success !== false && /广东|guangdong/i.test(data.region || '');
+          if (!inGuangdong) throw new Error('outside Guangdong');
+          return { city: data.city, district: '', source: 'IP估算' };
+        }
+      ];
+      for (const provider of providers) {
+        try {
+          const place = await provider();
+          if (applyLocatedPlace(place.city, place.district, place.source)) return;
+        } catch (_) {}
+      }
+      setLocationState('IP定位不可用或不在广东，请手动选择城市', 'error');
+    }
+
+    function locateByDevice() {
+      if (!window.isSecureContext || !navigator.geolocation) {
+        setLocationState('本地文件无法使用精确定位，已改用IP估算', 'error');
+        locateByIP(false);
+        return;
+      }
+      setLocationState('等待定位授权…', 'loading');
+      navigator.geolocation.getCurrentPosition(async position => {
+        try {
+          setLocationState('已获取位置，正在识别广东城市…', 'loading');
+          const { latitude, longitude } = position.coords;
+          const data = await fetchJson(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&accept-language=zh-CN&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`);
+          const address = data.address || {};
+          const province = address.state || address.province || '';
+          if (!/广东|guangdong/i.test(province)) throw new Error('outside Guangdong');
+          const city = address.city || address.town || address.county || address.state_district;
+          const district = address.city_district || address.county || address.suburb || '';
+          if (!applyLocatedPlace(city, district, '设备定位')) throw new Error('unknown city');
+        } catch (_) {
+          setLocationState('精确定位解析失败，正在改用IP估算', 'error');
+          locateByIP(false);
+        }
+      }, () => {
+        setLocationState('未获得定位权限，正在改用IP估算', 'error');
+        locateByIP(false);
+      }, { enableHighAccuracy: false, timeout: 7000, maximumAge: 600000 });
+    }
+
+    function money(value, compact = true) {
+      const safe = Number.isFinite(value) ? value : 0;
+      const sign = safe < 0 ? '-' : '';
+      const absolute = Math.abs(safe);
+      if (compact && absolute >= 10000) {
+        return sign + '¥' + (absolute / 10000).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '万';
+      }
+      return sign + '¥' + absolute.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    function exactMoney(value) {
+      const safe = Number.isFinite(value) ? value : 0;
+      const sign = safe < 0 ? '-' : '';
+      const absolute = Math.abs(safe);
+      return sign + '¥' + absolute.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '（' +
+        sign + (absolute / 10000).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '万元）';
+    }
+
+    function fixed(value, digits = 2) {
+      return Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    }
+
+    function getTier(disabled, staff, requiredRatio) {
+      const ratio = staff > 0 ? disabled / staff : 0;
+      if (ratio >= requiredRatio) return { rate: 0, label: '免征', css: 'tier-0' };
+      if (ratio >= 0.01) return { rate: .5, label: '50%', css: 'tier-50' };
+      return { rate: .9, label: '90%', css: 'tier-90' };
+    }
+
+    function showToast(message) {
+      const toast = $('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove('show'), 1700);
+    }
+
+    async function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      const helper = document.createElement('textarea');
+      helper.value = text;
+      helper.setAttribute('readonly', '');
+      helper.style.position = 'fixed';
+      helper.style.opacity = '0';
+      document.body.appendChild(helper);
+      helper.select();
+      const copied = document.execCommand('copy');
+      helper.remove();
+      if (!copied) throw new Error('copy failed');
+    }
+
+    function buildPlainSummary(data) {
+      const r = data.collaboration;
+      const certainty = data.policyVerified && data.compliancePending === 0 ? '已核验条件下的测算' : '初步估算';
+      if (!data.hasCorePolicy) return `${data.clientName}残疾人就业效益测算\n当前缺少${data.city}市现行计征工资上限或其他关键政策参数，暂不生成金额结论。请先按当地最新官方通告补充后再测算。`;
+      return `${data.clientName}残疾人就业效益测算（${data.targetYear}年度）\n` +
+        `1. 现在预计要交多少：${exactMoney(data.baselineDue)}。\n` +
+        `2. 合作后预计还要交多少：${exactMoney(r.due)}。\n` +
+        `3. 残保金预计少交${exactMoney(r.fundSaving)}，扣除工资、单位社保公积金等用工成本${exactMoney(r.laborCost)}后，合作毛收益：${exactMoney(r.fundNetBeforeFee)}。\n` +
+        `4. 再扣除服务费${exactMoney(r.serviceFee)}后，企业最终净省：${exactMoney(r.clientNet)}。\n` +
+        `满额安置方案：真实新增${r.n}名残疾职工，预计安置比例${fixed(r.ratioPct)}%。\n` +
+        `口径：${certainty}，在满足真实用工、劳动合同、社保、银行发薪及当地年审要求后预计可实现。\n` +
+        `本测算仅供经营决策参考，最终以主管部门审核口径为准。`;
+    }
+
+    function buildProposalText(data) {
+      const r = data.collaboration;
+      const checks = data.checks.map((item, index) => `${index + 1}. ${item.text}：${$(item.id).checked ? '已确认' : '待确认'}`).join('\n');
+      const conclusion = !data.hasCorePolicy
+        ? `当前缺少${data.city}市现行计征工资上限或其他关键参数，暂不生成金额结论。`
+        : r.n
+        ? `按达到规定安置比例测算，需真实新增${r.n}人，企业最终净收益预计${exactMoney(r.clientNet)}。`
+        : '当前参数下建议保持现状，暂不以残保金节省为目的新增招聘。';
+      return `残疾人真实就业合作方案（沟通确认版）\n` +
+        `${data.clientName} × ${data.providerName}\n` +
+        `测算年度：${data.targetYear}年度｜企业所在地：${data.city}\n\n` +
+        `一、建议结论\n${conclusion}\n` +
+        `以上为${data.policyVerified && data.compliancePending === 0 ? '已核验条件下的测算' : '初步估算'}，最终以主管税务机关、残联及当地执行口径为准。\n\n` +
+        `二、测算基础\n` +
+        `地理位置：${data.locationSource}识别为${data.city}市${data.city === '广州' && data.district !== '其他' ? data.district + '区' : ''}\n` +
+        `政策参数状态：${data.policyMeta.status || '待核验'}\n` +
+        `上年平均在职人数：${fixed(data.staff)}人\n` +
+        `现有已认定残疾职工年平均人数：${fixed(data.existing)}人\n` +
+        `规定安置比例：${fixed(data.requiredRatio * 100)}%\n` +
+        `适用计征工资基数：${exactMoney(data.base)}\n` +
+        `计划入职时间：${data.targetYear}年${data.startMonth}月，预计当年在岗${data.months}个月\n\n` +
+        `三、方案金额\n` +
+        `不新增时预计残保金：${exactMoney(data.baselineDue)}\n` +
+        `满额安置方案残保金节省：${exactMoney(r.fundSaving)}\n` +
+        `企业所得税潜在节省：${data.includeIncomeTax ? exactMoney(r.incomeTaxSaving) : '暂不纳入合计'}\n` +
+        `新增用工成本：${exactMoney(r.laborCost)}\n` +
+        `合作服务费：${exactMoney(r.serviceFee)}\n` +
+        `企业最终净收益：${exactMoney(r.clientNet)}\n\n` +
+        `四、合作收费\n` +
+        `固定实施服务费：${exactMoney(data.fixedFee)}\n` +
+        `正向净增益分成比例：${fixed(data.successRate * 100)}%\n` +
+        `建议以年度联网认证及实际申报结果复核结算，不对未实现的理论优惠收取成功分成。\n\n` +
+        `五、合规预检\n${checks}\n\n` +
+        `六、风险说明\n` +
+        `本方案只适用于真实就业，不适用于挂证不上岗、倒填入职月份或补造考勤、工资及社保记录。残疾职工应有真实岗位、实际劳动和可核验产出。当前采用现有残疾职工年平均人数${fixed(data.existing)}人的输入值，当地政策参数${data.policyVerified ? '已由使用者勾选核验' : '尚待核验'}。\n\n` +
+        `本测算仅供经营决策参考，不构成税务、法律或政府审批结论，最终以企业实际情况及主管部门审核口径为准。`;
+    }
+
+    function calculate() {
+      const staff = num('staffCount');
+      const requiredRatio = num('ratio') / 100;
+      const payrollTotal = num('payrollTotalWan') * 10000;
+      const averageWage = num('avgWage');
+      const wageCap = num('capWage');
+      const existing = num('existing');
+      const startMonth = Math.min(12, Math.max(1, Math.round(num('startMonth') || 1)));
+      const months = 13 - startMonth;
+      const monthFraction = months / 12;
+      const factor = Math.max(1, num('countFactor') || 1);
+      const monthlyWage = num('monthlyWage');
+      const socialCost = num('socialCost');
+      const otherCost = num('otherCost');
+      const monthlyCost = monthlyWage + socialCost + otherCost;
+      const oneOffCost = num('oneOffCost');
+      const incomeTaxRate = num('incomeTaxRate') / 100;
+      const successRate = num('successRate') / 100;
+      const fixedFee = num('fixedFee');
+      const includeIncomeTax = $('includeIncomeTax').checked;
+      const policyVerified = $('policyVerified').checked;
+      const isSmallEnterprise = staff <= 30;
+      const hasEnterpriseInputs = staff > 0 && averageWage > 0;
+      const hasCorePolicy = hasEnterpriseInputs && requiredRatio > 0 && wageCap > 0;
+      const base = hasCorePolicy ? Math.min(averageWage, wageCap) : 0;
+
+      const baselineTier = getTier(existing, staff, requiredRatio);
+      const baselineDiff = Math.max(0, staff * requiredRatio - existing);
+      const baselineDue = isSmallEnterprise ? 0 : baselineDiff * base * baselineTier.rate;
+
+      const countToReachRatio = targetRatio => {
+        if (isSmallEnterprise || targetRatio <= 0) return 0;
+        const gap = staff * targetRatio - existing;
+        if (gap <= 0) return 0;
+        const annualContribution = monthFraction * (factor - targetRatio);
+        return annualContribution > 0 ? Math.max(0, Math.ceil(gap / annualContribution - 1e-10)) : 0;
+      };
+      const halfRateCount = countToReachRatio(Math.min(.01, requiredRatio));
+      const fullExemptionCount = countToReachRatio(requiredRatio);
+      const scenarioCounts = new Set([0, 1, 2, 3, 4]);
+      [halfRateCount, fullExemptionCount].forEach(count => {
+        for (let offset = -2; offset <= 2; offset++) scenarioCounts.add(Math.max(0, count + offset));
+      });
+      const scenarios = [...scenarioCounts].sort((a, b) => a - b).map(n => {
+        const afterStaff = staff + n * monthFraction;
+        const afterDisabled = existing + n * factor * monthFraction;
+        const ratioPct = afterStaff > 0 ? afterDisabled / afterStaff * 100 : 0;
+        const tier = getTier(afterDisabled, afterStaff, requiredRatio);
+        const diff = Math.max(0, afterStaff * requiredRatio - afterDisabled);
+        const due = isSmallEnterprise ? 0 : diff * base * tier.rate;
+        const fundSaving = Math.max(0, baselineDue - due);
+        const laborCost = n * (monthlyCost * months + oneOffCost);
+        const incomeTaxSaving = includeIncomeTax ? n * monthlyWage * months * incomeTaxRate : 0;
+        const totalBenefit = fundSaving + incomeTaxSaving;
+        const fundNetBeforeFee = fundSaving - laborCost;
+        const netBeforeFee = totalBenefit - laborCost;
+        const serviceFee = n === 0 ? 0 : fixedFee + Math.max(0, netBeforeFee) * successRate;
+        const clientNet = netBeforeFee - serviceFee;
+        return { n, afterStaff, afterDisabled, ratioPct, tier, diff, due, fundSaving, laborCost, incomeTaxSaving, totalBenefit, fundNetBeforeFee, netBeforeFee, serviceFee, clientNet };
+      });
+
+      let economicBest = scenarios[0];
+      scenarios.forEach(s => {
+        if (s.clientNet > economicBest.clientNet + .01 || (Math.abs(s.clientNet - economicBest.clientNet) < .01 && s.n < economicBest.n)) economicBest = s;
+      });
+      const collaboration = scenarios.find(s => s.n === fullExemptionCount) || scenarios[0];
+      const recruitingScenarios = scenarios.filter(s => s.n > 0);
+      const bestRecruit = recruitingScenarios.reduce((best, s) => !best || s.clientNet > best.clientNet ? s : best, null);
+
+      const checks = [
+        { id: 'contractOk', text: '逐人签订一年以上劳动合同或服务协议' },
+        { id: 'workOk', text: '残疾职工实际到岗并有岗位、考勤和产出记录' },
+        { id: 'socialOk', text: '按月足额缴纳规定社会保险' },
+        { id: 'salaryOk', text: '通过银行支付不低于当地最低工资的工资' }
+      ];
+      const compliancePending = checks.filter(c => !$(c.id).checked).length;
+
+      return {
+        clientName: $('clientName').value.trim() || '客户企业',
+        providerName: $('providerName').value.trim() || '服务商',
+        city: $('city').value.trim() || '企业所在地',
+        district: $('district').value,
+        locationSource,
+        policyMeta: { ...policyMeta },
+        targetYear: Math.round(num('targetYear') || new Date().getFullYear()),
+        staff, requiredRatio, payrollTotal, averageWage, wageCap, base, existing, startMonth, months, factor,
+        monthlyWage, socialCost, otherCost, monthlyCost, oneOffCost, incomeTaxRate, successRate, fixedFee, includeIncomeTax, policyVerified,
+        isSmallEnterprise, hasEnterpriseInputs, hasCorePolicy, baselineTier, baselineDiff, baselineDue, halfRateCount, fullExemptionCount, scenarios,
+        collaboration, recommended: economicBest, bestRecruit, checks, compliancePending
+      };
+    }
+
+    function buildFormulaHtml(data) {
+      const r = data.collaboration;
+      const ready = data.hasCorePolicy;
+      const pending = '待补充核心数据及当地政策参数后自动代入';
+      const overviewTitle = r.clientNet > 0 ? '企业最终净省' : r.clientNet < 0 ? '当前方案预计净亏' : '企业最终净结果';
+      const overview = ready
+        ? `<div class="formula-overview"><small>先看总结果</small><strong>${overviewTitle} ${exactMoney(r.clientNet)}</strong><p>政策增益 ${exactMoney(r.totalBenefit)} − 用工成本 ${exactMoney(r.laborCost)} − 服务费 ${exactMoney(r.serviceFee)}</p></div>`
+        : `<div class="formula-overview"><small>先看总结果</small><strong>企业最终净省：待补充资料</strong><p>资料完整后，这里会直接显示“政策增益 − 用工成本 − 服务费”的结果。</p></div>`;
+      const items = [
+        {
+          title: '现在预计要交多少？',
+          answer: ready ? exactMoney(data.baselineDue) : '待补充资料',
+          expression: '现在应交残保金 = 未达标人数 × 适用工资基数 × 分档系数',
+          substitution: ready ? data.isSmallEnterprise ? `${fixed(data.staff)}人属于30人及以下企业，按当前免征口径预计为${exactMoney(0)}。` : `企业年平均工资${exactMoney(data.averageWage)}与当地上限${exactMoney(data.wageCap)}取低，适用基数为${exactMoney(data.base)}；代入人数和${fixed(data.baselineTier.rate * 100)}%分档系数后为${exactMoney(data.baselineDue)}。` : pending
+        },
+        {
+          title: '残保金能少交多少？',
+          answer: ready ? exactMoney(r.fundSaving) : '待补充资料',
+          expression: '残保金节省 = 现在应交残保金 − 合作后应交残保金',
+          substitution: ready ? `满额安置新增${r.n}人后，残保金由${exactMoney(data.baselineDue)}降至${exactMoney(r.due)}，预计少交${exactMoney(r.fundSaving)}。` : pending
+        },
+        {
+          title: '扣完工资社保后能省多少？',
+          answer: ready ? exactMoney(r.fundNetBeforeFee) : '待补充资料',
+          expression: '合作毛收益 = 残保金节省 − 新增用工成本',
+          substitution: ready ? `${exactMoney(r.fundSaving)} − ${exactMoney(r.laborCost)} = ${exactMoney(r.fundNetBeforeFee)}。新增用工成本包含${r.n}人的工资、单位社保公积金及已填写的其他用工成本；这里暂未扣合作服务费，也未计所得税潜在节省。` : pending
+        },
+        {
+          title: '最后企业净省多少？',
+          answer: ready ? exactMoney(r.clientNet) : '待补充资料',
+          expression: '企业最终净省 = 政策增益 − 新增用工成本 − 合作服务费',
+          substitution: ready ? `${exactMoney(r.totalBenefit)} − ${exactMoney(r.laborCost)} − ${exactMoney(r.serviceFee)} = ${exactMoney(r.clientNet)}。${r.clientNet > 0 ? '结果为正，表示当前参数下合作预计有净收益。' : '结果不为正，表示只靠当前政策节省尚不足以覆盖全部成本。'}` : pending
+        }
+      ];
+      const steps = items.map((item, index) => `<details class="formula-step"><summary><span class="formula-index">${index + 1}</span><span class="formula-step-title"><strong>${item.title}</strong><span>${item.answer}</span></span></summary><div class="formula-step-body"><div class="formula-expression">${item.expression}</div><div class="formula-substitution">当前数据：${item.substitution}</div></div></details>`).join('');
+      return overview + steps;
+    }
+
+    function pendingAmountText(data) {
+      if (!data.hasEnterpriseInputs) return '待填人数工资';
+      if (!(data.wageCap > 0)) return '待填计征上限';
+      return '待补充资料';
+    }
+
+    function render() {
+      const data = calculate();
+      const r = data.collaboration;
+      const missingInputs = updateFormProgress();
+      const certaintyReady = data.policyVerified && data.compliancePending === 0;
+      const positive = r.clientNet > 0;
+
+      $('confidenceBadge').textContent = !data.hasCorePolicy ? '待补充参数' : data.policyMeta.referenceOnly ? '历史参考试算' : certaintyReady ? '条件已核验' : '初步估算';
+      $('confidenceBadge').className = certaintyReady ? 'checked' : 'estimated';
+      $('complianceCount').textContent = data.compliancePending ? `${data.compliancePending}项待确认` : '4项已确认';
+
+      $('completeInputsBtn').classList.toggle('show', !data.hasCorePolicy);
+      $('completeInputsBtn').textContent = data.hasEnterpriseInputs && !data.hasCorePolicy ? '查看政策参考值' : '去填写核心数据';
+      if (!data.hasEnterpriseInputs) {
+        $('decisionTitle').innerHTML = `再填<span>${missingInputs.length}项核心数据</span>，就能看到节省金额`;
+        $('decisionCopy').textContent = '先填上年平均在职人数和工资总额。系统会自动换算企业年平均工资，并比较“不招聘”和不同招聘人数的结果。';
+      } else if (!data.hasCorePolicy) {
+        $('decisionTitle').innerHTML = `当地政策参数<span>尚待核验</span>`;
+        $('decisionCopy').textContent = data.policyMeta.referenceCap ? `系统已找到${data.policyMeta.verifiedThrough}年度的最近官方参考值，可一键用于初步试算；正式结果仍需核验${data.targetYear}年度口径。` : '当前城市的计征工资上限尚未内置，请按当地最新官方通告补充。未知值不会按0处理，也不会生成虚假的节省金额。';
+      } else if (data.isSmallEnterprise) {
+        $('decisionTitle').innerHTML = `预计无需缴残保金，<span>不必为此新增招聘</span>`;
+        $('decisionCopy').textContent = '当前属于30人及以下企业，预计残保金为0元。如企业确有真实岗位需求，再单独评估劳动产出、所得税优惠和其他合规政策。';
+      } else if (r.n === 0) {
+        $('decisionTitle').innerHTML = `现有安置比例已达标，<span>无需新增招聘</span>`;
+        $('decisionCopy').textContent = `当前残疾职工年平均人数已满足规定比例，预计残保金为${money(r.due)}。`;
+      } else if (r.clientNet < 0) {
+        $('decisionTitle').innerHTML = `满额安置需新增<span>${r.n}人</span>，预计净成本${money(Math.abs(r.clientNet))}`;
+        $('decisionCopy').textContent = `合作前预计交${money(data.baselineDue)}，满额安置后预计交${money(r.due)}；残保金少交${money(r.fundSaving)}，扣除工资社保等用工成本后为${money(r.fundNetBeforeFee)}，再扣服务费后为${money(r.clientNet)}。负数表示当前成本高于已纳入的政策节省。`;
+      } else {
+        $('decisionTitle').innerHTML = `满额安置需新增<span>${r.n}人</span>，企业最终净省${money(r.clientNet)}`;
+        $('decisionCopy').textContent = `合作前预计交${money(data.baselineDue)}，合作后预计交${money(r.due)}；残保金少交${money(r.fundSaving)}，扣除工资社保等用工成本后，合作毛收益${money(r.fundNetBeforeFee)}；再扣服务费后，企业最终净省${money(r.clientNet)}。`;
+      }
+
+      const pendingAmount = pendingAmountText(data);
+      if (!data.hasEnterpriseInputs) {
+        $('liveFormulaText').textContent = '填写上年平均人数和工资总额后，这里会自动代入完整算式';
+      } else if (!(data.wageCap > 0)) {
+        $('liveFormulaText').textContent = `未达标差额人数已算出${fixed(data.baselineDiff)}人；补充当地计征工资上限后即可得出金额`;
+      } else if (data.isSmallEnterprise) {
+        $('liveFormulaText').textContent = `${fixed(data.staff)}人 ≤ 30人，现行优惠期内预计应缴残保金为${money(0, false)}`;
+      } else {
+        $('liveFormulaText').textContent = `${fixed(data.baselineDiff)}人 × ${money(data.base, false)} × ${fixed(data.baselineTier.rate * 100, 0)}% = ${money(data.baselineDue, false)}`;
+      }
+      $('liveFormulaPolicy').textContent = data.policyMeta.referenceOnly
+        ? `当前采用${data.policyMeta.verifiedThrough}年度历史参考上限试算，正式申报前须核验`
+        : data.policyVerified ? '当前政策参数已标记核验，正式结果仍以主管部门审核为准'
+        : '当前为初步估算；分档减缴及30人以下免征政策延续至2027年12月31日';
+      $('baselineDue').textContent = data.hasCorePolicy ? money(data.baselineDue) : pendingAmount;
+      $('baselineTier').textContent = !data.hasCorePolicy ? '填写后自动判断征收档位' : data.isSmallEnterprise ? '现行30人及以下企业免征口径' : `现有比例按${data.baselineTier.label}档估算`;
+      $('recommendedCount').textContent = data.hasCorePolicy ? money(r.due) : pendingAmount;
+      $('recommendedRatio').textContent = !data.hasCorePolicy ? '填写后自动计算' : r.n ? `满额安置新增${r.n}人 · 比例${fixed(r.ratioPct)}%` : '现有安置比例已达标';
+      $('recommendedCost').textContent = data.hasCorePolicy ? money(r.fundNetBeforeFee) : pendingAmount;
+      $('recommendedCost').className = `metric-value ${data.hasCorePolicy && r.fundNetBeforeFee > 0 ? 'positive' : data.hasCorePolicy && r.fundNetBeforeFee < 0 ? 'negative' : ''}`;
+      $('clientNet').textContent = data.hasCorePolicy ? money(r.clientNet) : pendingAmount;
+      $('clientNet').className = `metric-value ${positive ? 'positive' : r.clientNet < 0 ? 'negative' : ''}`;
+
+      $('fullExemptionTitle').textContent = !data.hasCorePolicy ? '资料齐全后再判断是否值得招聘' : data.isSmallEnterprise ? '目前无需通过招聘实现免征' : `完全免征约需新增${data.fullExemptionCount}人`;
+      $('fullExemptionCopy').textContent = !data.hasCorePolicy ? '系统会同时展示不招聘要交多少、招聘能省多少、扣除成本后净收益多少。' : data.isSmallEnterprise ? '30人及以下企业的残保金减免与是否新增招聘不是同一件事。' : `按${data.startMonth}月入职、在岗${data.months}个月、认定系数${data.factor}测算；实际以年度联网认证结果为准。`;
+      $('riskTitle').textContent = data.compliancePending ? `${data.compliancePending}项关键条件待确认` : '核心用工条件已勾选';
+      $('riskCopy').textContent = data.compliancePending ? '未确认条件不会阻止试算，但合作方案只可表述为“满足条件后预计可享受”。' : '仍需核验当地年度政策、证件有效性及主管部门执行口径。';
+
+      $('scenarioBody').innerHTML = data.hasCorePolicy ? data.scenarios.map(s => {
+        const isRec = s.n === r.n;
+        const netClass = s.clientNet > 0 ? 'money-positive' : s.clientNet < 0 ? 'money-negative' : '';
+        const benefitSub = data.includeIncomeTax ? `含所得税潜在节省${money(s.incomeTaxSaving)}` : '仅计残保金节省';
+        return `<tr class="${isRec ? 'recommended' : ''}">
+          <td><div class="plan-name">${s.n === 0 ? '保持现状' : `新增${s.n}人`}${isRec ? '<span class="recommended-tag">满额方案</span>' : ''}</div><span class="subvalue">安置比例${fixed(s.ratioPct)}% · ${data.isSmallEnterprise ? '免征' : s.tier.label + '档'}</span></td>
+          <td>${money(s.due)}</td>
+          <td>${money(s.fundSaving)}<span class="subvalue">${benefitSub}</span></td>
+          <td>${money(s.laborCost)}</td>
+          <td class="${netClass}">${money(s.clientNet)}</td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="5" style="text-align:center;color:#7b8986;padding:24px">填写核心数据后生成方案对比</td></tr>';
+
+      $('scenarioCards').innerHTML = data.hasCorePolicy ? data.scenarios.map(s => {
+        const isRec = s.n === r.n;
+        const netClass = s.clientNet < 0 ? 'negative' : '';
+        return `<article class="scenario-card ${isRec ? 'recommended' : ''}">
+          <div class="scenario-card-head"><strong>${s.n === 0 ? '保持现状' : `新增${s.n}人`}${isRec ? ' · 满额方案' : ''}</strong><span class="tier-tag ${s.tier.css}">${data.isSmallEnterprise ? '免征' : s.tier.label + '档'}</span></div>
+          <div class="scenario-card-net ${netClass}">企业净收益 ${money(s.clientNet)}</div>
+          <div class="scenario-card-grid">
+            <div><span>残保金节省</span><b>${money(s.fundSaving)}</b></div>
+            <div><span>用工成本</span><b>${money(s.laborCost)}</b></div>
+            <div><span>安置比例</span><b>${fixed(s.ratioPct)}%</b></div>
+          </div>
+        </article>`;
+      }).join('') : '<article class="scenario-card"><strong>填写平均人数和工资总额后，这里会显示各招聘方案。</strong></article>';
+
+      const maxAbs = Math.max(1, ...data.scenarios.map(s => Math.abs(s.clientNet)));
+      $('bars').innerHTML = data.hasCorePolicy ? data.scenarios.map(s => {
+        const width = Math.max(s.clientNet === 0 ? 1 : 4, Math.abs(s.clientNet) / maxAbs * 100);
+        const cls = s.clientNet > 0 ? 'positive' : s.clientNet < 0 ? 'negative' : 'zero';
+        return `<div class="bar-row"><div class="bar-label">${s.n === 0 ? '现状' : s.n + '人'}</div><div class="bar-track"><div class="bar ${cls}" style="width:${width}%"></div></div><div class="bar-amount ${s.clientNet > 0 ? 'money-positive' : s.clientNet < 0 ? 'money-negative' : ''}">${money(s.clientNet)}</div></div>`;
+      }).join('') : '';
+
+      const formulaHtml = buildFormulaHtml(data);
+      $('formulaList').innerHTML = formulaHtml;
+      $('proposalFormula').innerHTML = formulaHtml;
+
+      $('proposalParties').textContent = `${data.clientName} × ${data.providerName}`;
+      $('proposalDate').textContent = `测算年度：${data.targetYear}年度 · 企业所在地：${data.city}`;
+      $('proposalLead').textContent = !data.hasCorePolicy ? '核心数据或当地政策参数未补齐，暂不生成金额结论。' : !r.n ? '现有安置比例已达标，无需新增招聘。' : r.clientNet >= 0 ? `满额安置需真实新增${r.n}人，扣除全部成本后预计净省${money(r.clientNet)}。` : `满额安置需真实新增${r.n}人，扣除全部成本后预计净成本${money(Math.abs(r.clientNet))}。`;
+      $('proposalLeadNote').textContent = !data.hasCorePolicy ? '请返回填写企业平均人数、工资总额，并核验当地计征工资上限。' : `新增用工成本${money(r.laborCost)}，合作服务费${money(r.serviceFee)}；${certaintyReady ? '核心条件已勾选核验，正式结果仍以主管部门审核为准。' : `当前为初步估算，尚有${data.compliancePending}项用工条件或政策参数待确认。`}`;
+      $('proposalBenefit').textContent = data.hasCorePolicy ? exactMoney(data.baselineDue) : pendingAmount;
+      $('proposalCost').textContent = data.hasCorePolicy ? exactMoney(r.fundNetBeforeFee) : pendingAmount;
+      $('proposalNet').textContent = data.hasCorePolicy ? exactMoney(r.clientNet) : pendingAmount;
+
+      $('proposalReasons').innerHTML = (data.hasCorePolicy ? [
+        ['满额安置人数', r.n ? `${r.n}人，预计当年在岗${data.months}个月` : '0人，现有比例已达标'],
+        ['残保金变化', `由${money(data.baselineDue)}降至${money(r.due)}，预计节省${money(r.fundSaving)}`],
+        ['扣工资社保后', `残保金节省${money(r.fundSaving)}减用工成本${money(r.laborCost)}，合作毛收益${money(r.fundNetBeforeFee)}`],
+        ['企业最终结果', `再扣服务费${money(r.serviceFee)}后，净收益${money(r.clientNet)}`],
+        ['满额安置说明', data.isSmallEnterprise ? '当前属于30人及以下企业，预计免征' : `约需新增${data.fullExemptionCount}人达到规定比例；是否值得合作还要看最终净收益`]
+      ] : [
+        ['下一步1', '填写上年平均在职人数'],
+        ['下一步2', '填写上年度工资总额'],
+        ['下一步3', '核验系统匹配的地区政策参数']
+      ]).map(([label, value]) => `<div class="proposal-item"><span>${label}</span><strong>${value}</strong></div>`).join('');
+
+      const currentRatio = data.staff > 0 ? data.existing / data.staff * 100 : 0;
+      $('proposalBasics').innerHTML = [
+        ['上年平均在职人数', `${fixed(data.staff)}人`],
+        ['现有残疾职工年平均人数', `${fixed(data.existing)}人`],
+        ['当前安置比例', `${fixed(currentRatio)}%`],
+        ['规定安置比例', `${fixed(data.requiredRatio * 100)}%`],
+        ['适用计征工资基数', exactMoney(data.base)],
+        ['计划入职及在岗时间', `${data.targetYear}年${data.startMonth}月，预计${data.months}个月`],
+        ['地理位置识别', `${data.locationSource} · ${data.city}市${data.city === '广州' && data.district !== '其他' ? data.district + '区' : ''}`],
+        ['政策参数状态', data.policyMeta.status || '待核验']
+      ].map(([label, value]) => `<div class="proposal-item"><span>${label}</span><strong>${value}</strong></div>`).join('');
+
+      $('proposalCommercial').innerHTML = [
+        ['残保金预计节省', data.hasCorePolicy ? exactMoney(r.fundSaving) : pendingAmount],
+        ['企业所得税潜在节省', !data.hasCorePolicy ? pendingAmount : data.includeIncomeTax ? exactMoney(r.incomeTaxSaving) : '暂不纳入合计'],
+        ['正向净增益分成比例', `${fixed(data.successRate * 100)}%`],
+        ['固定实施服务费', exactMoney(data.fixedFee)],
+        ['收费触发条件', '仅对正向净增益计提分成'],
+        ['结算建议', '以年审确认及实际申报结果复核']
+      ].map(([label, value]) => `<div class="proposal-item"><span>${label}</span><strong>${value}</strong></div>`).join('');
+
+      $('proposalChecks').innerHTML = data.checks.map(c => {
+        const ok = $(c.id).checked;
+        return `<div class="check-item"><span class="check-state ${ok ? 'yes' : 'pending'}">${ok ? '✓' : '?'}</span><span>${c.text}：${ok ? '已确认' : '待确认'}</span></div>`;
+      }).join('');
+
+      $('proposalRisk').innerHTML = `本方案只适用于真实就业，不适用于“挂证不上岗”、倒填入职月份、补造考勤或工资社保记录。残疾职工应有真实岗位、实际劳动和可核验产出，工资由企业通过银行支付，社会保险依法按月足额缴纳。当前采用现有残疾职工年平均人数${fixed(data.existing)}人的输入值；当地计征工资上限${data.wageCap ? exactMoney(data.wageCap) : '待补充资料'}，参数状态为“${data.policyMeta.status || '待核验'}”。IP或设备定位只能帮助选择地区，不能替代政策核验；政策或关键成本缺失时，不应把估算结果表述为确定减免。`;
+
+      window.latestData = data;
+    }
+
+    inputIds.forEach(id => {
+      const el = $(id);
+      el.addEventListener(el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input', () => {
+        if (id === 'staffCount' || id === 'payrollTotalWan') updateDerivedWage();
+        render();
+      });
+    });
+
+    $('city').addEventListener('change', () => {
+      locationSource = '手动选择';
+      setLocationState(`已手动选择${$('city').value}市`);
+      applyCityPolicy(true);
+    });
+    $('district').addEventListener('change', () => applyCityPolicy(false));
+    $('targetYear').addEventListener('change', () => applyCityPolicy(false));
+    $('capWage').addEventListener('input', () => {
+      $('capStatus').textContent = '手动填写';
+      $('policyVerified').checked = false;
+      policyMeta = { ...policyMeta, cap: num('capWage') || null, status: '手动填写·待核验' };
+      $('policySummaryAmount').textContent = num('capWage') ? `手动填写 ¥${num('capWage').toLocaleString('zh-CN')}` : '等待补充计征上限';
+      $('policySummaryStatus').textContent = `${$('city').value} · ${Math.round(num('targetYear'))}年度待官方核验`;
+      render();
+    });
+    $('useReferenceCapBtn').addEventListener('click', () => {
+      const referenceCap = Number($('useReferenceCapBtn').dataset.cap || 0);
+      const referenceYear = $('useReferenceCapBtn').dataset.year;
+      if (!referenceCap) return;
+      $('capWage').value = referenceCap;
+      $('capStatus').textContent = '历史参考试算';
+      $('policyVerified').checked = false;
+      policyMeta = { ...policyMeta, cap: referenceCap, status: `使用${referenceYear}年度历史参考值·待核验`, referenceOnly: true };
+      $('policySummaryAmount').textContent = `参考试算 ¥${referenceCap.toLocaleString('zh-CN')} / 年`;
+      $('policySummaryStatus').textContent = `采用${referenceYear}年度官方历史值；不代表${Math.round(num('targetYear'))}年度现行标准`;
+      $('useReferenceCapBtn').hidden = true;
+      render();
+      showToast('已按最近官方参考值试算');
+    });
+    $('locateBtn').addEventListener('click', locateByDevice);
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === tab.dataset.tab));
+      });
+    });
+
+    $('copySummaryBtn').addEventListener('click', async () => {
+      try { await copyText(buildPlainSummary(window.latestData)); showToast('测算摘要已复制'); }
+      catch { showToast('浏览器未允许复制，请手动选择文本'); }
+    });
+
+    $('copyProposalBtn').addEventListener('click', async () => {
+      try { await copyText(buildProposalText(window.latestData)); showToast('完整合作方案已复制'); }
+      catch { showToast('浏览器未允许复制，请手动选择文本'); }
+    });
+
+    function printProposal() {
+      document.querySelector('[data-tab="proposalPane"]').click();
+      setTimeout(() => window.print(), 80);
+    }
+    $('printBtn').addEventListener('click', printProposal);
+    $('printTopBtn').addEventListener('click', printProposal);
+    $('formulaStartBtn').addEventListener('click', () => {
+      $('staffCount').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => $('staffCount').focus(), 450);
+    });
+    $('completeInputsBtn').addEventListener('click', () => (window.latestData?.hasEnterpriseInputs ? document.querySelector('.policy-match-card') : $('staffCount')).scrollIntoView({ behavior: 'smooth', block: 'center' }));
+    $('mobileEditBtn').addEventListener('click', () => document.querySelector('.input-panel').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    $('mobileReportBtn').addEventListener('click', () => {
+      if (!window.latestData.hasCorePolicy) {
+        (window.latestData.hasEnterpriseInputs ? document.querySelector('.policy-match-card') : $('staffCount')).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showToast(window.latestData.hasEnterpriseInputs ? '请选择参考试算或补充政策参数' : '先补齐橙色核心数据');
+        return;
+      }
+      document.querySelector('[data-tab="proposalPane"]').click();
+      document.querySelector('.content-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    $('resetBtn').addEventListener('click', () => {
+      inputIds.forEach(id => {
+        const el = $(id);
+        if (el.type === 'checkbox') el.checked = initialValues[id]; else el.value = initialValues[id];
+      });
+      locationSource = '手动选择';
+      updateDerivedWage();
+      applyCityPolicy(true);
+      showToast('已清空，可以重新测算');
+    });
+
+    updateDerivedWage();
+    applyCityPolicy(true);
+    setTimeout(() => locateByIP(true), 350);
+  </script>
+</body>
+</html>
