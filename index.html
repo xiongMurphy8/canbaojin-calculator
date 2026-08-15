@@ -934,7 +934,7 @@
   </div>
   <div class="toast" id="toast">已复制</div>
 
-  <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
+  <script src="https://static.cloudbase.net/cloudbase-js-sdk/2.28.6/cloudbase.full.js"></script>
   <script>
     const $ = id => document.getElementById(id);
     const CITY_POLICY = {
@@ -1359,17 +1359,20 @@
     async function getCloudbaseDatabase() {
       if (!window.cloudbase) throw new Error('云端组件未加载，请检查网络后重试');
       if (!cloudbaseApp) cloudbaseApp = window.cloudbase.init({ env: CLOUDBASE_ENV_ID, region: CLOUDBASE_REGION });
-      const auth = cloudbaseApp.auth();
-      const loginState = typeof auth.getLoginState === 'function' ? await auth.getLoginState() : null;
-      if (!loginState) await auth.signInAnonymously();
-      return cloudbaseApp.database();
+      const auth = cloudbaseApp.auth;
+      const { data: sessionData, error: sessionError } = await auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!sessionData?.session) {
+        const { error: loginError } = await auth.signInAnonymously();
+        if (loginError) throw loginError;
+      }
+      return cloudbaseApp.rdb();
     }
 
     function buildCalculationRecord(data) {
       const r = data.collaboration;
       return {
         schema_version: 1,
-        created_at_iso: new Date().toISOString(),
         source: 'cloudbase_site',
         page_path: `${location.origin}${location.pathname}`,
         consent_version: '2026-08-15-v1',
@@ -1435,14 +1438,16 @@
       setSaveStatus('正在安全保存，请稍候…');
       try {
         const db = await getCloudbaseDatabase();
-        const result = await db.collection('calculation_records').add({ data: buildCalculationRecord(data) });
-        const recordId = result?.id || result?._id || '';
+        const { data: savedData, error: saveError } = await db.from('calculation_records').insert(buildCalculationRecord(data));
+        if (saveError) throw saveError;
+        const savedRecord = Array.isArray(savedData) ? savedData[0] : savedData;
+        const recordId = savedRecord?.id || '';
         setSaveStatus(recordId ? `已保存成功 · 记录编号 ${recordId}` : '已保存成功，管理员可在后台查看。', 'success');
         showToast('测算记录已保存');
       } catch (error) {
         console.error('保存测算记录失败', error);
         const message = String(error?.message || error || '未知错误');
-        setSaveStatus(message.includes('collection') || message.includes('database') ? '数据库尚未完成首次初始化，请联系管理员处理。' : message.includes('domain') || message.includes('域名') ? '当前地址无权保存，请使用腾讯云正式访问地址。' : '保存失败，请检查网络后重试或联系管理员。', 'error');
+        setSaveStatus(message.includes('permission') || message.includes('policy') || message.includes('RLS') ? '数据库权限校验未通过，请联系管理员处理。' : message.includes('domain') || message.includes('域名') || message.includes('cors') ? '当前地址无权保存，请使用腾讯云正式访问地址。' : '保存失败，请检查网络后重试或联系管理员。', 'error');
       } finally {
         saveInProgress = false;
         $('confirmSaveBtn').disabled = false;
