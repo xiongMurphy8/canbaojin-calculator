@@ -16,6 +16,34 @@
 
 云端记录使用 CloudBase PostgreSQL，并通过 RLS 将每条记录绑定到匿名用户身份。数据库结构与权限配置保存在 `cloudbase-postgresql.sql`，前端不包含管理员 API Key。
 
+## 后台管理
+
+页面里新增了“后台管理”页签，用于查看、筛选和导出记录。它通过一个安全的后台接口读取数据，不把数据库管理员密钥写死在前端。后台接口尚未部署时，页面会保留配置入口，但不会直接读取数据库。
+
+后台接口建议返回以下任一格式：
+
+- `[{...record}, {...record}]`
+- `{ "records": [{...record}, {...record}] }`
+- `{ "data": [{...record}, {...record}] }`
+
+每条记录至少建议包含：
+
+- `id`
+- `created_at`
+- `company_name`
+- `contact`
+- `inputs.city`
+- `inputs.district`
+- `inputs.staff_count`
+- `results.client_net`
+- `results.fund_saving`
+- `results.service_fee`
+- `policy_status`
+
+前端会自动做关键字、城市、日期范围和最低净收益筛选，并支持导出当前筛选结果为 CSV。
+
+如果你后面要把后台接口接到腾讯云函数，优先采用“HTTP 云函数 + Bearer Token”方式，避免在网页里暴露数据库管理员权限。
+
 ## 使用说明
 
 优先准备上年平均在职人数、上年度工资总额和现有已认定残疾职工年平均人数。页面只支持真实就业场景测算，不支持挂证不上岗、倒填入职月份或补造考勤、工资及社保记录。

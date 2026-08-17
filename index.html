@@ -283,6 +283,37 @@
     .toolbar-actions { display: flex; gap: 8px; }
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
+    .admin-pane { display: grid; gap: 14px; padding: 18px 20px 20px; }
+    .admin-setup, .admin-summary, .admin-table-shell { border: 1px solid var(--line); border-radius: 16px; background: #fff; overflow: hidden; }
+    .admin-setup { padding: 16px; }
+    .admin-setup-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+    .admin-setup-head strong { display: block; font-size: 14px; }
+    .admin-setup-head p { margin: 3px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .admin-grid { display: grid; grid-template-columns: 1.2fr .8fr .8fr; gap: 10px; }
+    .admin-grid .field label { font-size: 10px; }
+    .admin-grid .input-wrap input { min-height: 40px; font-size: 12px; }
+    .admin-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .admin-status { margin-top: 10px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+    .admin-status.error { color: var(--red); }
+    .admin-status.success { color: var(--brand); }
+    .admin-summary { display: grid; grid-template-columns: repeat(4, 1fr); }
+    .admin-summary .metric { padding: 16px 16px 18px; }
+    .admin-summary .metric-value { font-size: 20px; }
+    .admin-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); background: #fafcf8; }
+    .admin-toolbar .field { min-width: 160px; flex: 1 1 160px; }
+    .admin-toolbar .field label { font-size: 9px; }
+    .admin-toolbar .input-wrap input, .admin-toolbar .input-wrap select { min-height: 38px; font-size: 12px; }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .admin-table th, .admin-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; white-space: nowrap; }
+    .admin-table th { color: var(--muted); font-size: 9px; font-weight: 750; background: #fbfcf8; }
+    .admin-table td { background: white; }
+    .admin-table tr:hover td { background: #f7faf6; }
+    .admin-table .muted { color: var(--muted); font-size: 9px; white-space: normal; }
+    .admin-table .money { font-weight: 750; }
+    .admin-empty { padding: 26px 16px; color: var(--muted); font-size: 12px; text-align: center; }
+    .admin-pagination { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--line); background: #fafcf8; color: var(--muted); font-size: 10px; }
+    .admin-pagination .page-actions { display: flex; gap: 6px; }
+    .admin-pagination .btn { min-height: 32px; padding: 0 10px; font-size: 11px; }
 
     .scenario-wrap { padding: 6px 20px 20px; overflow-x: auto; }
     .scenario-cards { display: none; padding: 12px; gap: 10px; }
@@ -413,6 +444,11 @@
       .results { order: 2; }
       .insight-strip { grid-template-columns: 1fr; }
       .save-fields { grid-template-columns: 1fr; }
+      .admin-grid, .admin-summary { grid-template-columns: 1fr; }
+      .admin-toolbar { gap: 10px; }
+      .admin-toolbar .field { min-width: 0; flex: 1 1 100%; }
+      .admin-pagination { flex-direction: column; align-items: stretch; }
+      .admin-pagination .page-actions { justify-content: space-between; }
       .mobile-actions {
         position: fixed; z-index: 18; left: 12px; right: 12px; bottom: max(10px, env(safe-area-inset-bottom));
         display: grid; grid-template-columns: 1fr 1.25fr; gap: 8px; border: 1px solid rgba(202,212,204,.9);
@@ -512,6 +548,11 @@
       .cost-details-grid { grid-template-columns: 1fr; }
       .cost-details > summary { font-size: 12px; }
       .mobile-actions { grid-template-columns: 1.05fr 1fr; }
+      .admin-setup-head { display: block; }
+      .admin-setup-head .btn { width: 100%; margin-top: 10px; }
+      .admin-summary .metric { border-right: 0; border-bottom: 1px solid var(--line); }
+      .admin-summary .metric:last-child { border-bottom: 0; }
+      .admin-table th, .admin-table td { padding: 9px 10px; }
     }
 
     @media print {
@@ -839,6 +880,7 @@
             <div class="tabs" role="tablist">
               <button class="tab active" type="button" data-tab="comparePane">方案对比</button>
               <button class="tab" type="button" data-tab="proposalPane">合作方案</button>
+              <button class="tab" type="button" data-tab="adminPane">后台管理</button>
             </div>
             <div class="toolbar-actions">
               <button class="btn small" id="copySummaryBtn" type="button">复制摘要</button>
@@ -921,6 +963,115 @@
               <div class="proposal-footer">本测算仅供经营决策参考，不构成税务、法律或政府审批结论，最终以企业实际情况及主管部门审核口径为准。</div>
             </div>
           </div>
+
+          <div class="tab-pane" id="adminPane">
+            <div class="admin-pane">
+              <section class="admin-setup">
+                <div class="admin-setup-head">
+                  <div>
+                    <strong>后台记录列表</strong>
+                    <p>连接一个返回 JSON 的安全接口后，就能查看、筛选和导出全部测算记录。前端不保存管理员密钥，只保存接口地址和访问令牌。</p>
+                  </div>
+                  <button class="btn small primary" id="adminLoadBtn" type="button">加载记录</button>
+                </div>
+                <div class="admin-grid">
+                  <div class="field full">
+                    <label for="adminApiUrl">后台接口地址</label>
+                    <div class="input-wrap"><input id="adminApiUrl" type="text" placeholder="例如：https://api.example.com/admin/calculation-records"></div>
+                  </div>
+                  <div class="field full">
+                    <label for="adminToken">访问令牌 / Bearer Token</label>
+                    <div class="input-wrap"><input id="adminToken" type="password" placeholder="仅浏览器本地保存，不回传到前端页面其他地方"></div>
+                  </div>
+                  <div class="field">
+                    <label for="adminPageSize">每页条数</label>
+                    <div class="input-wrap"><input id="adminPageSize" type="number" min="5" max="200" step="1" value="20"><span class="unit">条</span></div>
+                  </div>
+                </div>
+                <div class="admin-actions">
+                  <button class="btn small" id="adminSaveConfigBtn" type="button">保存配置</button>
+                  <button class="btn small" id="adminExportCsvBtn" type="button">导出当前筛选 CSV</button>
+                  <button class="btn small" id="adminRefreshBtn" type="button">刷新数据</button>
+                  <button class="btn small" id="adminClearBtn" type="button">清空缓存</button>
+                </div>
+                <div class="admin-status" id="adminStatus">未加载。请先填写后台接口地址。</div>
+              </section>
+
+              <section class="admin-summary">
+                <div class="metric">
+                  <div class="metric-label">记录总数</div>
+                  <div class="metric-value" id="adminTotalCount">0</div>
+                  <div class="metric-note">接口返回的全部记录</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">当前页条数</div>
+                  <div class="metric-value" id="adminShownCount">0</div>
+                  <div class="metric-note">当前筛选条件下可见记录</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">净收益合计</div>
+                  <div class="metric-value positive" id="adminNetSum">¥0.00</div>
+                  <div class="metric-note">仅统计本页可见记录</div>
+                </div>
+                <div class="metric focus">
+                  <div class="metric-label">最新记录时间</div>
+                  <div class="metric-value" id="adminLatestAt">--</div>
+                  <div class="metric-note">按创建时间排序</div>
+                </div>
+              </section>
+
+              <section class="admin-table-shell">
+                <div class="admin-toolbar">
+                  <div class="field">
+                    <label for="adminFilterKeyword">公司名 / 联系人</label>
+                    <div class="input-wrap"><input id="adminFilterKeyword" type="text" placeholder="输入关键字过滤"></div>
+                  </div>
+                  <div class="field">
+                    <label for="adminFilterCity">城市</label>
+                    <div class="input-wrap"><input id="adminFilterCity" type="text" placeholder="例如：广州"></div>
+                  </div>
+                  <div class="field">
+                    <label for="adminFilterFrom">起始日期</label>
+                    <div class="input-wrap"><input id="adminFilterFrom" type="date"></div>
+                  </div>
+                  <div class="field">
+                    <label for="adminFilterTo">结束日期</label>
+                    <div class="input-wrap"><input id="adminFilterTo" type="date"></div>
+                  </div>
+                  <div class="field">
+                    <label for="adminFilterNetMin">最低净收益</label>
+                    <div class="input-wrap"><input id="adminFilterNetMin" type="number" step="100" placeholder="例如 10000"><span class="unit">元</span></div>
+                  </div>
+                </div>
+                <div style="overflow:auto">
+                  <table class="admin-table" aria-label="后台记录列表">
+                    <thead>
+                      <tr>
+                        <th>时间</th>
+                        <th>企业</th>
+                        <th>地区</th>
+                        <th>人数</th>
+                        <th>净收益</th>
+                        <th>残保金节省</th>
+                        <th>服务费</th>
+                        <th>联系方式</th>
+                      </tr>
+                    </thead>
+                    <tbody id="adminTableBody">
+                      <tr><td colspan="8" class="admin-empty">尚未加载记录</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="admin-pagination">
+                  <div id="adminPageInfo">第 1 页</div>
+                  <div class="page-actions">
+                    <button class="btn" id="adminPrevPageBtn" type="button">上一页</button>
+                    <button class="btn" id="adminNextPageBtn" type="button">下一页</button>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
         </article>
 
         <div class="bottom-note"><span>提示</span><div>本工具只支持真实就业测算。入职月份按实际发生月份计算，不倒填、不补造考勤或工资社保记录；政策参数未核验时，结果仅作为初步估算。</div></div>
@@ -959,10 +1110,15 @@
     const CLOUDBASE_ENV_ID = 'canbaojin-d7gfb2yfg490fc759';
     const CLOUDBASE_REGION = 'ap-shanghai';
     const CLOUDBASE_SITE_URL = 'https://canbaojin-d7gfb2yfg490fc759-1427274058.tcloudbaseapp.com/';
+    const ADMIN_STORAGE_KEY = 'canbaojin_admin_config_v1';
     let locationSource = '手动选择';
     let policyMeta = {};
     let cloudbaseApp = null;
     let saveInProgress = false;
+    let adminRecords = [];
+    let adminFilteredRecords = [];
+    let adminPage = 1;
+    let adminEndpointLoaded = false;
 
     const inputIds = [
       'clientName','providerName','city','district','targetYear','staffCount','ratio','payrollTotalWan','avgWage','capWage','existing',
@@ -1354,6 +1510,196 @@
 
     function cleanOptionalText(id) {
       return $(id).value.trim().replace(/[<>]/g, '').slice(0, 80);
+    }
+
+    function loadAdminConfig() {
+      try {
+        const raw = localStorage.getItem(ADMIN_STORAGE_KEY);
+        if (!raw) return;
+        const cfg = JSON.parse(raw);
+        if (cfg.apiUrl) $('adminApiUrl').value = cfg.apiUrl;
+        if (cfg.token) $('adminToken').value = cfg.token;
+        if (cfg.pageSize) $('adminPageSize').value = cfg.pageSize;
+      } catch (error) {
+        console.warn('读取后台配置失败', error);
+      }
+    }
+
+    function saveAdminConfig() {
+      const cfg = {
+        apiUrl: $('adminApiUrl').value.trim(),
+        token: $('adminToken').value.trim(),
+        pageSize: Math.min(200, Math.max(5, Math.round(Number($('adminPageSize').value || 20))))
+      };
+      localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(cfg));
+      $('adminPageSize').value = String(cfg.pageSize);
+      return cfg;
+    }
+
+    function setAdminStatus(message, type = '') {
+      const el = $('adminStatus');
+      el.textContent = message;
+      el.className = `admin-status ${type}`.trim();
+    }
+
+    function getAdminConfig() {
+      return {
+        apiUrl: $('adminApiUrl').value.trim(),
+        token: $('adminToken').value.trim(),
+        pageSize: Math.min(200, Math.max(5, Math.round(Number($('adminPageSize').value || 20))))
+      };
+    }
+
+    function normalizeRecord(record) {
+      const inputs = record.inputs || {};
+      const results = record.results || {};
+      const createdAt = record.created_at || record.createdAt || record.created || '';
+      return {
+        id: record.id || '',
+        created_at: createdAt,
+        company_name: record.company_name || record.companyName || '',
+        contact: record.contact || '',
+        city: inputs.city || record.city || '',
+        district: inputs.district || record.district || '',
+        staff_count: Number(inputs.staff_count ?? record.staff_count ?? 0) || 0,
+        client_net: Number(results.client_net ?? record.client_net ?? 0) || 0,
+        fund_saving: Number(results.fund_saving ?? record.fund_saving ?? 0) || 0,
+        service_fee: Number(results.service_fee ?? record.service_fee ?? 0) || 0,
+        baseline_due: Number(results.baseline_due ?? record.baseline_due ?? 0) || 0,
+        target_year: Number(inputs.target_year ?? record.target_year ?? new Date().getFullYear()) || new Date().getFullYear(),
+        source: record.source || '',
+        policy_status: record.policy_status || '',
+        raw: record
+      };
+    }
+
+    function formatAdminDate(value) {
+      if (!value) return '--';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function adminApplyFilters() {
+      const keyword = $('adminFilterKeyword').value.trim().toLowerCase();
+      const city = $('adminFilterCity').value.trim().toLowerCase();
+      const from = $('adminFilterFrom').value ? new Date(`${$('adminFilterFrom').value}T00:00:00`) : null;
+      const to = $('adminFilterTo').value ? new Date(`${$('adminFilterTo').value}T23:59:59`) : null;
+      const netMin = Number($('adminFilterNetMin').value || '');
+      adminFilteredRecords = adminRecords.filter(record => {
+        const createdAt = new Date(record.created_at || record.createdAt || record.created || '');
+        if (from && (!createdAt || createdAt < from)) return false;
+        if (to && (!createdAt || createdAt > to)) return false;
+        if (city && !String(record.city || '').toLowerCase().includes(city)) return false;
+        if (keyword) {
+          const haystack = [record.company_name, record.contact, record.id, record.city, record.district, record.policy_status].join(' ').toLowerCase();
+          if (!haystack.includes(keyword)) return false;
+        }
+        if (!Number.isNaN(netMin) && Number.isFinite(netMin) && Math.abs(netMin) > 0) {
+          if ((record.client_net || 0) < netMin) return false;
+        }
+        return true;
+      });
+      adminPage = 1;
+      renderAdminTable();
+    }
+
+    function adminCsvValue(value) {
+      const text = String(value ?? '');
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+
+    function exportAdminCsv() {
+      const rows = adminFilteredRecords.length ? adminFilteredRecords : adminRecords;
+      if (!rows.length) {
+        setAdminStatus('没有可导出的记录。', 'error');
+        return;
+      }
+      const header = ['记录时间', '企业名称', '联系方式', '城市', '区县', '上年平均人数', '净收益(元)', '残保金节省(元)', '服务费(元)', '政策状态'];
+      const lines = [header.map(adminCsvValue).join(',')];
+      rows.forEach(row => {
+        lines.push([
+          formatAdminDate(row.created_at),
+          row.company_name,
+          row.contact,
+          row.city,
+          row.district,
+          row.staff_count,
+          row.client_net,
+          row.fund_saving,
+          row.service_fee,
+          row.policy_status
+        ].map(adminCsvValue).join(','));
+      });
+      const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `残保金后台记录_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setAdminStatus(`已导出 ${rows.length} 条记录。`, 'success');
+    }
+
+    function renderAdminTable() {
+      const pageSize = Math.min(200, Math.max(5, Math.round(Number($('adminPageSize').value || 20))));
+      const total = adminRecords.length;
+      const visible = adminFilteredRecords.length;
+      const pageCount = Math.max(1, Math.ceil(visible / pageSize));
+      if (adminPage > pageCount) adminPage = pageCount;
+      const start = (adminPage - 1) * pageSize;
+      const pageRows = adminFilteredRecords.slice(start, start + pageSize);
+      $('adminTotalCount').textContent = String(total);
+      $('adminShownCount').textContent = String(visible);
+      $('adminNetSum').textContent = money(pageRows.reduce((sum, row) => sum + (Number(row.client_net) || 0), 0));
+      $('adminLatestAt').textContent = adminRecords[0] ? formatAdminDate(adminRecords[0].created_at) : '--';
+      $('adminPageInfo').textContent = visible ? `第 ${adminPage} / ${pageCount} 页 · ${start + 1}-${Math.min(visible, start + pageSize)} 条` : '暂无筛选结果';
+      $('adminPrevPageBtn').disabled = adminPage <= 1;
+      $('adminNextPageBtn').disabled = adminPage >= pageCount || !visible;
+      if (!pageRows.length) {
+        $('adminTableBody').innerHTML = '<tr><td colspan="8" class="admin-empty">没有符合条件的记录</td></tr>';
+        return;
+      }
+      $('adminTableBody').innerHTML = pageRows.map(row => `<tr>
+        <td>${formatAdminDate(row.created_at)}<div class="muted">${row.id || ''}</div></td>
+        <td>${row.company_name || '未填写'}</td>
+        <td>${row.city || '未填写'}${row.district ? ` · ${row.district}` : ''}</td>
+        <td>${fixed(row.staff_count)}人</td>
+        <td class="money ${row.client_net >= 0 ? 'money-positive' : 'money-negative'}">${money(row.client_net)}</td>
+        <td>${money(row.fund_saving)}</td>
+        <td>${money(row.service_fee)}</td>
+        <td>${row.contact || '未填写'}</td>
+      </tr>`).join('');
+    }
+
+    async function loadAdminRecords() {
+      const { apiUrl, token } = getAdminConfig();
+      if (!apiUrl) {
+        setAdminStatus('请先填写后台接口地址。', 'error');
+        return;
+      }
+      setAdminStatus('正在加载后台记录…');
+      $('adminLoadBtn').disabled = true;
+      try {
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await fetch(apiUrl, { headers, credentials: 'include' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        const list = Array.isArray(payload) ? payload : Array.isArray(payload.records) ? payload.records : Array.isArray(payload.data) ? payload.data : [];
+        adminRecords = list.map(normalizeRecord).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        adminFilteredRecords = [...adminRecords];
+        adminEndpointLoaded = true;
+        adminApplyFilters();
+        setAdminStatus(`已加载 ${adminRecords.length} 条记录。`, 'success');
+      } catch (error) {
+        console.error('加载后台记录失败', error);
+        setAdminStatus(`加载失败：${String(error?.message || error)}`, 'error');
+        adminRecords = [];
+        adminFilteredRecords = [];
+        renderAdminTable();
+      } finally {
+        $('adminLoadBtn').disabled = false;
+      }
     }
 
     async function getCloudbaseDatabase() {
@@ -1764,8 +2110,45 @@
       showToast('已清空，可以重新测算');
     });
 
+    $('adminSaveConfigBtn').addEventListener('click', () => {
+      saveAdminConfig();
+      setAdminStatus('后台配置已保存到本机浏览器。', 'success');
+    });
+    $('adminLoadBtn').addEventListener('click', () => {
+      saveAdminConfig();
+      loadAdminRecords();
+    });
+    $('adminRefreshBtn').addEventListener('click', () => loadAdminRecords());
+    $('adminExportCsvBtn').addEventListener('click', exportAdminCsv);
+    $('adminClearBtn').addEventListener('click', () => {
+      localStorage.removeItem(ADMIN_STORAGE_KEY);
+      $('adminApiUrl').value = '';
+      $('adminToken').value = '';
+      $('adminPageSize').value = '20';
+      adminRecords = [];
+      adminFilteredRecords = [];
+      adminPage = 1;
+      renderAdminTable();
+      setAdminStatus('后台缓存已清空。', 'success');
+    });
+    ['adminFilterKeyword', 'adminFilterCity', 'adminFilterFrom', 'adminFilterTo', 'adminFilterNetMin', 'adminPageSize'].forEach(id => {
+      $(id).addEventListener(id === 'adminPageSize' ? 'change' : 'input', adminApplyFilters);
+    });
+    $('adminPrevPageBtn').addEventListener('click', () => {
+      adminPage = Math.max(1, adminPage - 1);
+      renderAdminTable();
+    });
+    $('adminNextPageBtn').addEventListener('click', () => {
+      const pageSize = Math.min(200, Math.max(5, Math.round(Number($('adminPageSize').value || 20))));
+      const pageCount = Math.max(1, Math.ceil(adminFilteredRecords.length / pageSize));
+      adminPage = Math.min(pageCount, adminPage + 1);
+      renderAdminTable();
+    });
+
+    loadAdminConfig();
     updateDerivedWage();
     applyCityPolicy(true);
+    adminApplyFilters();
     if (!location.hostname.endsWith('.tcloudbaseapp.com')) $('saveCalculationBtn').textContent = '前往腾讯云版保存';
     setTimeout(() => locateByIP(true), 350);
   </script>
