@@ -177,7 +177,7 @@
 
 - 本轮没有修改生产代码或计算公式。
 - 分支仅新增本评审报告，未合并、未部署。
-- PR/diff：创建PR后补充链接。
+- PR/diff：[PR #3：评审第1轮——计算逻辑边界测试](https://github.com/xiongMurphy8/canbaojin-calculator/pull/3)。
 
 ## 8. 政策依据
 

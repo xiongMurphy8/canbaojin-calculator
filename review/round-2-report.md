@@ -184,7 +184,7 @@
 
 - 本轮没有修改生产代码、城市参数或计算公式。
 - 分支仅新增本评审报告，未合并、未部署。
-- PR/diff：创建PR后补充链接。
+- PR/diff：[PR #1：评审第2轮——地区数据覆盖与跨市场景](https://github.com/xiongMurphy8/canbaojin-calculator/pull/1)。
 
 ## 9. 政策依据
 

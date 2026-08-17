@@ -151,7 +151,7 @@
 
 - 本轮没有修改生产代码、挂靠风险文案或计算公式。
 - 分支只新增三轮评审报告及最终汇总，未合并、未部署。
-- PR/diff：创建PR后补充链接。
+- PR/diff：[PR #2：评审第3轮——产品诚实度与最终评审包](https://github.com/xiongMurphy8/canbaojin-calculator/pull/2)。
 
 ## 6. 政策依据
 
