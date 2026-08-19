@@ -395,7 +395,7 @@
     .proposal-lead small { display: block; margin-bottom: 8px; color: var(--lime); font-size: 9px; font-weight: 750; }
     .proposal-lead strong { display: block; font-size: 20px; line-height: 1.35; }
     .proposal-lead p { margin: 9px 0 0; color: rgba(255,255,255,.7); font-size: 9px; line-height: 1.65; }
-    .proposal-amounts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .proposal-amounts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
     .proposal-amount { border: 1px solid var(--line); border-radius: 13px; padding: 12px; background: #fafbf7; }
     .proposal-amount span { display: block; color: var(--muted); font-size: 8px; }
     .proposal-amount strong { display: block; margin-top: 5px; font-size: 14px; }
@@ -833,9 +833,9 @@
               <div class="metric-note" id="baselineTier">保持现状预计要交的残保金</div>
             </div>
             <div class="metric">
-              <div class="metric-label">② 合作后还要交多少？</div>
+              <div class="metric-label">② 要真实招聘多少人，预计残保金为0？</div>
               <div class="metric-value" id="recommendedCount">等待测算</div>
-              <div class="metric-note" id="recommendedRatio">按推荐招聘方案测算</div>
+              <div class="metric-note" id="recommendedRatio">填写平均人数后立即计算，不受工资上限影响</div>
             </div>
             <div class="metric">
               <div class="metric-label">③ 扣完工资社保后能省多少？</div>
@@ -924,6 +924,7 @@
               <div class="proposal-summary">
                 <div class="proposal-lead"><small>建议结论</small><strong id="proposalLead">等待测算</strong><p id="proposalLeadNote">填写核心数据后自动生成</p></div>
                 <div class="proposal-amounts">
+                  <div class="proposal-amount"><span>预计需真实新增</span><strong id="proposalHireCount">等待测算</strong></div>
                   <div class="proposal-amount"><span>现在预计要交</span><strong id="proposalBenefit">等待测算</strong></div>
                   <div class="proposal-amount"><span>扣工资社保后毛收益</span><strong id="proposalCost">等待测算</strong></div>
                   <div class="proposal-amount"><span>扣除全部成本后净省</span><strong id="proposalNet">等待测算</strong></div>
@@ -1361,10 +1362,11 @@
     function buildPlainSummary(data) {
       const r = data.collaboration;
       const certainty = data.policyVerified && data.compliancePending === 0 ? '已核验条件下的测算' : '初步估算';
-      if (!data.hasCorePolicy) return `${data.clientName}残疾人就业效益测算\n当前缺少${data.city}市现行计征工资上限或其他关键政策参数，暂不生成金额结论。请先按当地最新官方通告补充后再测算。`;
+      const countAnswer = !data.hasExemptionCountInputs ? '待填写上年平均在职人数' : data.isSmallEnterprise ? '0人（30人及以下企业现行政策免征）' : r.n ? `${r.n}人（按${data.targetYear}年${data.startMonth}月真实入职、当年在岗${data.months}个月测算）` : '0人（现有安置比例已达到规定比例）';
+      if (!data.hasCorePolicy) return `${data.clientName}残疾人就业效益测算\n达到规定安置比例预计需真实新增：${countAnswer}。\n当前缺少${data.city}市现行计征工资上限、企业工资数据或其他关键政策参数，暂不生成金额结论。请先按当地最新官方通告补充后再测算。${data.planMonthIsPast ? '\n警示：填写的入职月份已经过去，仅在当时确已真实入职且合同、工资、社保、考勤记录可核验时才能按该月份计算，不得倒填。' : ''}`;
       return `${data.clientName}残疾人就业效益测算（${data.targetYear}年度）\n` +
         `1. 现在预计要交多少：${exactMoney(data.baselineDue)}。\n` +
-        `2. 合作后预计还要交多少：${exactMoney(r.due)}。\n` +
+        `2. 预计需真实新增多少人：${countAnswer}；达到规定比例后预计残保金为${exactMoney(r.due)}。\n` +
         `3. 残保金预计少交${exactMoney(r.fundSaving)}，扣除工资、单位社保公积金等用工成本${exactMoney(r.laborCost)}后，合作毛收益：${exactMoney(r.fundNetBeforeFee)}。\n` +
         `4. 再扣除服务费${exactMoney(r.serviceFee)}后，企业最终净省：${exactMoney(r.clientNet)}。\n` +
         `满额安置方案：真实新增${r.n}名残疾职工，预计安置比例${fixed(r.ratioPct)}%。\n` +
@@ -1375,8 +1377,9 @@
     function buildProposalText(data) {
       const r = data.collaboration;
       const checks = data.checks.map((item, index) => `${index + 1}. ${item.text}：${$(item.id).checked ? '已确认' : '待确认'}`).join('\n');
+      const countConclusion = !data.hasExemptionCountInputs ? '招聘人数待补充上年平均在职人数后计算' : data.isSmallEnterprise ? '当前30人及以下，预计无需为残保金新增招聘' : r.n ? `达到规定安置比例预计需真实新增${r.n}人` : '现有安置比例已达到规定比例，无需新增招聘';
       const conclusion = !data.hasCorePolicy
-        ? `当前缺少${data.city}市现行计征工资上限或其他关键参数，暂不生成金额结论。`
+        ? `${countConclusion}；当前缺少${data.city}市现行计征工资上限、企业工资数据或其他关键参数，暂不生成金额结论。`
         : r.n
         ? `按达到规定安置比例测算，需真实新增${r.n}人，企业最终净收益预计${exactMoney(r.clientNet)}。`
         : '当前参数下建议保持现状，暂不以残保金节省为目的新增招聘。';
@@ -1432,9 +1435,13 @@
       const includeIncomeTax = $('includeIncomeTax').checked;
       const policyVerified = $('policyVerified').checked;
       const isSmallEnterprise = staff <= 30;
+      const hasExemptionCountInputs = staff > 0 && requiredRatio > 0;
       const hasEnterpriseInputs = staff > 0 && averageWage > 0;
       const hasCorePolicy = hasEnterpriseInputs && requiredRatio > 0 && wageCap > 0;
       const base = hasCorePolicy ? Math.min(averageWage, wageCap) : 0;
+      const now = new Date();
+      const targetYear = Math.round(num('targetYear') || now.getFullYear());
+      const planMonthIsPast = targetYear < now.getFullYear() || (targetYear === now.getFullYear() && startMonth < now.getMonth() + 1);
 
       const baselineTier = getTier(existing, staff, requiredRatio);
       const baselineDiff = Math.max(0, staff * requiredRatio - existing);
@@ -1494,10 +1501,10 @@
         district: $('district').value,
         locationSource,
         policyMeta: { ...policyMeta },
-        targetYear: Math.round(num('targetYear') || new Date().getFullYear()),
+        targetYear,
         staff, requiredRatio, payrollTotal, averageWage, wageCap, base, existing, startMonth, months, factor,
         monthlyWage, socialCost, otherCost, monthlyCost, oneOffCost, incomeTaxRate, successRate, fixedFee, includeIncomeTax, policyVerified,
-        isSmallEnterprise, hasEnterpriseInputs, hasCorePolicy, baselineTier, baselineDiff, baselineDue, halfRateCount, fullExemptionCount, scenarios,
+        isSmallEnterprise, hasExemptionCountInputs, hasEnterpriseInputs, hasCorePolicy, planMonthIsPast, baselineTier, baselineDiff, baselineDue, halfRateCount, fullExemptionCount, scenarios,
         collaboration, recommended: economicBest, bestRecruit, checks, compliancePending
       };
     }
@@ -1804,6 +1811,7 @@
     function buildFormulaHtml(data) {
       const r = data.collaboration;
       const ready = data.hasCorePolicy;
+      const countReady = data.hasExemptionCountInputs;
       const pending = '待补充核心数据及当地政策参数后自动代入';
       const overviewTitle = r.clientNet > 0 ? '企业最终净省' : r.clientNet < 0 ? '当前方案预计净亏' : '企业最终净结果';
       const overview = ready
@@ -1817,10 +1825,10 @@
           substitution: ready ? data.isSmallEnterprise ? `${fixed(data.staff)}人属于30人及以下企业，按当前免征口径预计为${exactMoney(0)}。` : `企业年平均工资${exactMoney(data.averageWage)}与当地上限${exactMoney(data.wageCap)}取低，适用基数为${exactMoney(data.base)}；代入人数和${fixed(data.baselineTier.rate * 100)}%分档系数后为${exactMoney(data.baselineDue)}。` : pending
         },
         {
-          title: '残保金能少交多少？',
-          answer: ready ? exactMoney(r.fundSaving) : '待补充资料',
-          expression: '残保金节省 = 现在应交残保金 − 合作后应交残保金',
-          substitution: ready ? `满额安置新增${r.n}人后，残保金由${exactMoney(data.baselineDue)}降至${exactMoney(r.due)}，预计少交${exactMoney(r.fundSaving)}。` : pending
+          title: '要真实招聘多少人，预计残保金为0？',
+          answer: countReady ? `${r.n}人` : '待填写平均人数',
+          expression: '按规定安置比例、现有残疾职工年平均人数和当年真实在岗月份测算，人数向上取整',
+          substitution: countReady ? data.isSmallEnterprise ? `${fixed(data.staff)}人属于30人及以下企业，现行政策下无需为残保金新增招聘。` : r.n ? `按${data.targetYear}年${data.startMonth}月真实入职、当年在岗${data.months}个月测算，预计需新增${r.n}人，招聘后安置比例约${fixed(r.ratioPct)}%。${data.planMonthIsPast ? '所填月份已经过去，只有当时确已真实入职且记录可核验时才能采用，不得倒填。' : ''}` : '现有残疾职工年平均人数已达到规定比例，预计无需新增招聘。' : '填写上年平均在职人数后即可计算；计征工资上限只影响金额，不影响达到规定比例所需人数。'
         },
         {
           title: '扣完工资社保后能省多少？',
@@ -1858,12 +1866,12 @@
 
       $('completeInputsBtn').classList.toggle('show', !data.hasCorePolicy);
       $('completeInputsBtn').textContent = data.hasEnterpriseInputs && !data.hasCorePolicy ? '查看政策参考值' : '去填写核心数据';
-      if (!data.hasEnterpriseInputs) {
+      if (!data.hasExemptionCountInputs) {
         $('decisionTitle').innerHTML = `再填<span>${missingInputs.length}项核心数据</span>，就能看到节省金额`;
         $('decisionCopy').textContent = '先填上年平均在职人数和工资总额。系统会自动换算企业年平均工资，并比较“不招聘”和不同招聘人数的结果。';
       } else if (!data.hasCorePolicy) {
-        $('decisionTitle').innerHTML = `当地政策参数<span>尚待核验</span>`;
-        $('decisionCopy').textContent = data.policyMeta.referenceCap ? `系统已找到${data.policyMeta.verifiedThrough}年度的最近官方参考值，可一键用于初步试算；正式结果仍需核验${data.targetYear}年度口径。` : '当前城市的计征工资上限尚未内置，请按当地最新官方通告补充。未知值不会按0处理，也不会生成虚假的节省金额。';
+        $('decisionTitle').innerHTML = data.isSmallEnterprise ? `预计无需为残保金新增招聘，<span>金额政策待核验</span>` : r.n ? `预计需真实新增<span>${r.n}人</span>，金额政策待核验` : `现有安置比例已达标，<span>金额政策待核验</span>`;
+        $('decisionCopy').textContent = `${data.isSmallEnterprise ? '当前30人及以下，现行政策免征。' : r.n ? `按${data.targetYear}年${data.startMonth}月真实入职并在岗${data.months}个月测算，招聘后安置比例约${fixed(r.ratioPct)}%。` : '现有残疾职工年平均人数已达到规定比例。'} ${data.policyMeta.referenceCap ? `系统已找到${data.policyMeta.verifiedThrough}年度的最近官方参考值；正式金额仍需核验${data.targetYear}年度口径。` : '当前城市的计征工资上限或企业工资数据尚未补齐，因此只回答人数，不生成虚假的节省金额。'}`;
       } else if (data.isSmallEnterprise) {
         $('decisionTitle').innerHTML = `预计无需缴残保金，<span>不必为此新增招聘</span>`;
         $('decisionCopy').textContent = '当前属于30人及以下企业，预计残保金为0元。如企业确有真实岗位需求，再单独评估劳动产出、所得税优惠和其他合规政策。';
@@ -1894,17 +1902,18 @@
         : '当前为初步估算；分档减缴及30人以下免征政策延续至2027年12月31日';
       $('baselineDue').textContent = data.hasCorePolicy ? money(data.baselineDue) : pendingAmount;
       $('baselineTier').textContent = !data.hasCorePolicy ? '填写后自动判断征收档位' : data.isSmallEnterprise ? '现行30人及以下企业免征口径' : `现有比例按${data.baselineTier.label}档估算`;
-      $('recommendedCount').textContent = data.hasCorePolicy ? money(r.due) : pendingAmount;
-      $('recommendedRatio').textContent = !data.hasCorePolicy ? '填写后自动计算' : r.n ? `满额安置新增${r.n}人 · 比例${fixed(r.ratioPct)}%` : '现有安置比例已达标';
+      $('recommendedCount').textContent = !data.hasExemptionCountInputs ? '等待测算' : `${r.n}人`;
+      $('recommendedCount').className = 'metric-value';
+      $('recommendedRatio').textContent = !data.hasExemptionCountInputs ? '填写上年平均在职人数后立即计算' : data.isSmallEnterprise ? '30人（含）以下企业现行政策免征，无需为残保金新增' : r.n ? `按${data.targetYear}年${data.startMonth}月真实入职、在岗${data.months}个月 · 招聘后比例约${fixed(r.ratioPct)}%${data.hasCorePolicy ? ` · 预计残保金${money(r.due)}` : ' · 金额待核验'}` : '现有安置比例已达到规定比例，无需新增';
       $('recommendedCost').textContent = data.hasCorePolicy ? money(r.fundNetBeforeFee) : pendingAmount;
       $('recommendedCost').className = `metric-value ${data.hasCorePolicy && r.fundNetBeforeFee > 0 ? 'positive' : data.hasCorePolicy && r.fundNetBeforeFee < 0 ? 'negative' : ''}`;
       $('clientNet').textContent = data.hasCorePolicy ? money(r.clientNet) : pendingAmount;
       $('clientNet').className = `metric-value ${positive ? 'positive' : r.clientNet < 0 ? 'negative' : ''}`;
 
-      $('fullExemptionTitle').textContent = !data.hasCorePolicy ? '资料齐全后再判断是否值得招聘' : data.isSmallEnterprise ? '目前无需通过招聘实现免征' : `完全免征约需新增${data.fullExemptionCount}人`;
-      $('fullExemptionCopy').textContent = !data.hasCorePolicy ? '系统会同时展示不招聘要交多少、招聘能省多少、扣除成本后净收益多少。' : data.isSmallEnterprise ? '30人及以下企业的残保金减免与是否新增招聘不是同一件事。' : `按${data.startMonth}月入职、在岗${data.months}个月、认定系数${data.factor}测算；实际以年度联网认证结果为准。`;
-      $('riskTitle').textContent = data.compliancePending ? `${data.compliancePending}项关键条件待确认` : '核心用工条件已勾选';
-      $('riskCopy').textContent = data.compliancePending ? '未确认条件不会阻止试算，但合作方案只可表述为“满足条件后预计可享受”。' : '仍需核验当地年度政策、证件有效性及主管部门执行口径。';
+      $('fullExemptionTitle').textContent = !data.hasExemptionCountInputs ? '填写平均人数后立即回答招聘人数' : data.isSmallEnterprise ? '目前无需通过招聘实现免征' : data.fullExemptionCount ? `达到规定比例预计需真实新增${data.fullExemptionCount}人` : '现有安置比例已达标，无需新增';
+      $('fullExemptionCopy').textContent = !data.hasExemptionCountInputs ? '招聘人数不受计征工资上限影响，先填平均人数即可计算。' : data.isSmallEnterprise ? '30人及以下企业的政策免征与新增招聘达到1.5%是两种不同情形。' : `按${data.targetYear}年${data.startMonth}月真实入职、在岗${data.months}个月、认定系数${data.factor}测算；实际以年度联网认证结果为准。`;
+      $('riskTitle').textContent = data.planMonthIsPast ? '入职月份已经过去，不得倒填' : data.compliancePending ? `${data.compliancePending}项关键条件待确认` : '核心用工条件已勾选';
+      $('riskCopy').textContent = data.planMonthIsPast ? `当前填写的是${data.targetYear}年${data.startMonth}月。只有员工当时已真实入职，且合同、工资、社保、考勤记录可核验时才能按该月份计算；如为现在开始招聘，请改为实际预计入职月份。` : data.compliancePending ? '未确认条件不会阻止试算，但合作方案只可表述为“满足条件后预计可享受”。' : '仍需核验当地年度政策、证件有效性及主管部门执行口径。';
       const isCloudbaseSite = location.hostname.endsWith('.tcloudbaseapp.com');
       $('saveReadyHint').textContent = !isCloudbaseSite
         ? '当前地址可正常测算；如需云端留存，请前往腾讯云正式版。'
@@ -1952,8 +1961,9 @@
 
       $('proposalParties').textContent = `${data.clientName} × ${data.providerName}`;
       $('proposalDate').textContent = `测算年度：${data.targetYear}年度 · 企业所在地：${data.city}`;
-      $('proposalLead').textContent = !data.hasCorePolicy ? '核心数据或当地政策参数未补齐，暂不生成金额结论。' : !r.n ? '现有安置比例已达标，无需新增招聘。' : r.clientNet >= 0 ? `满额安置需真实新增${r.n}人，扣除全部成本后预计净省${money(r.clientNet)}。` : `满额安置需真实新增${r.n}人，扣除全部成本后预计净成本${money(Math.abs(r.clientNet))}。`;
-      $('proposalLeadNote').textContent = !data.hasCorePolicy ? '请返回填写企业平均人数、工资总额，并核验当地计征工资上限。' : `新增用工成本${money(r.laborCost)}，合作服务费${money(r.serviceFee)}；${certaintyReady ? '核心条件已勾选核验，正式结果仍以主管部门审核为准。' : `当前为初步估算，尚有${data.compliancePending}项用工条件或政策参数待确认。`}`;
+      $('proposalLead').textContent = !data.hasExemptionCountInputs ? '填写上年平均在职人数后，立即给出预计招聘人数。' : !data.hasCorePolicy ? data.isSmallEnterprise ? '当前30人及以下，预计无需为残保金新增招聘；金额参数待核验。' : r.n ? `达到规定安置比例预计需真实新增${r.n}人；金额参数待核验。` : '现有安置比例已达标，无需新增招聘；金额参数待核验。' : !r.n ? '现有安置比例已达标，无需新增招聘。' : r.clientNet >= 0 ? `满额安置需真实新增${r.n}人，扣除全部成本后预计净省${money(r.clientNet)}。` : `满额安置需真实新增${r.n}人，扣除全部成本后预计净成本${money(Math.abs(r.clientNet))}。`;
+      $('proposalLeadNote').textContent = !data.hasCorePolicy ? `人数按${data.targetYear}年${data.startMonth}月真实入职、在岗${data.months}个月测算；请继续补充企业工资总额并核验当地计征工资上限。${data.planMonthIsPast ? ' 所填月份已经过去，不得倒填。' : ''}` : `新增用工成本${money(r.laborCost)}，合作服务费${money(r.serviceFee)}；${certaintyReady ? '核心条件已勾选核验，正式结果仍以主管部门审核为准。' : `当前为初步估算，尚有${data.compliancePending}项用工条件或政策参数待确认。`}`;
+      $('proposalHireCount').textContent = !data.hasExemptionCountInputs ? '等待测算' : `${r.n}人`;
       $('proposalBenefit').textContent = data.hasCorePolicy ? exactMoney(data.baselineDue) : pendingAmount;
       $('proposalCost').textContent = data.hasCorePolicy ? exactMoney(r.fundNetBeforeFee) : pendingAmount;
       $('proposalNet').textContent = data.hasCorePolicy ? exactMoney(r.clientNet) : pendingAmount;
@@ -1965,9 +1975,9 @@
         ['企业最终结果', `再扣服务费${money(r.serviceFee)}后，净收益${money(r.clientNet)}`],
         ['满额安置说明', data.isSmallEnterprise ? '当前属于30人及以下企业，预计免征' : `约需新增${data.fullExemptionCount}人达到规定比例；是否值得合作还要看最终净收益`]
       ] : [
-        ['下一步1', '填写上年平均在职人数'],
-        ['下一步2', '填写上年度工资总额'],
-        ['下一步3', '核验系统匹配的地区政策参数']
+        ['预计需真实新增', !data.hasExemptionCountInputs ? '填写上年平均在职人数后计算' : data.isSmallEnterprise ? '0人，当前30人及以下企业现行政策免征' : r.n ? `${r.n}人，按当年真实在岗${data.months}个月测算` : '0人，现有安置比例已达标'],
+        ['下一步1', '补充上年度工资总额'],
+        ['下一步2', '核验系统匹配的地区计征工资上限']
       ]).map(([label, value]) => `<div class="proposal-item"><span>${label}</span><strong>${value}</strong></div>`).join('');
 
       const currentRatio = data.staff > 0 ? data.existing / data.staff * 100 : 0;
